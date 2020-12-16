@@ -123,3 +123,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Doplňky
+.vscode/
+data/
+data_bvh/
+data_bvh_test/
+data_converted/
+tests/
+.gitattributes
+.gitignore
+README.me
+tempCodeRunnerFile.py

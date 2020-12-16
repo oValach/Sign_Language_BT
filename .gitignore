@@ -3,3 +3,5 @@ env
 ENV
 .vscode/
 .gitignore
+dtw-master/
+dtw.egg-info/

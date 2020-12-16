@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -135,3 +134,10 @@ tests/
 .gitignore
 README.me
 tempCodeRunnerFile.py
+soubory/ÚKOLY.txt
+soubory/todo.txt
+soubory/16_10_25_a_R.bvh
+soubory/17_01_15_b_FR.bvh
+soubory/17_03_25_b_R.bvh
+soubory/PRJ5+BP.txt
+

@@ -1,1 +1,0 @@
-print(dtw.__version__)

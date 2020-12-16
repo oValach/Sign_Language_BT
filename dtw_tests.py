@@ -3,7 +3,7 @@ import math
 import operator
 import pandas as pd
 import numpy as np
-import cython
+import pickle as pkl
 import matplotlib.pyplot as plt
 from dtw import dtw
 from fastdtw import fastdtw
@@ -11,30 +11,43 @@ from datetime import datetime
 from collections import OrderedDict
 from scipy.spatial.distance import euclidean
 from lib import data_comp
-from lib import importer
-
+from lib import BP_lib
 from timeit import timeit
 
-a = [1,1,1]
-b = [2,2,2]
+if __name__ == "__main__":
+    
+    #TEST NA SLOVECH
+    word1 = 'bude'
+    word2 = 'sobota'
+    [word1_traj,_,_,_] = BP_lib.find_word(word1, 1)
+    [word2_traj,_,_,_] = BP_lib.find_word(word2, 1)
+ 
+    word = 'bude'
+    words_found = BP_lib.find_word(word, 2)
+    [word1_traj,_,_,_] = words_found[0]
+    [word2_traj,_,_,] = words_found[1]
+    alg_type = 'fastdtw'
+    start_time = datetime.now()
+    dtw_result = BP_lib.dtws(alg_type, word1_traj, word2_traj)
+    end_time = datetime.now()
 
-a_np = np.array(a)
-b_np = np.array(b)
+    print(str(alg_type) + ': ' + str(word) + ' vs ' + str(word))
+    [print(str(k)+': '+str(v)) for k, v in dtw_result.items()]
+    print('Duration: {}'.format(end_time - start_time))
 
-"""
-start_time = datetime.now()
-dtw_test = dtw(a_np, b_np, dist = euclidean)
-end_time = datetime.now()
-"""
+    #TEST NA UMELYCH POLICH
+    a = [1,1,1]
+    b = [2,2,2]
 
-print(timeit(dtw(a_np, b_np, dist = euclidean)))
-print(dtw_test[0])
+    a_np = np.array(a)
+    b_np = np.array(b)
 
-"""
-start_time = datetime.now()
-fastdtw_test = fastdtw(a_np, b_np, dist=euclidean)
-end_time = datetime.now()
-"""
+    start_time = datetime.now()
+    dtw_test = dtw(a_np, b_np, dist = euclidean)
+    end_time = datetime.now()
+    print(dtw_test[0])
 
-print(timeit(fastdtw(a_np, b_np, dist=euclidean)))
-print(fastdtw_test[0])
+    start_time = datetime.now()
+    fastdtw_test = fastdtw(a_np, b_np, dist=euclidean)
+    end_time = datetime.now()
+    #print(fastdtw_test[0])

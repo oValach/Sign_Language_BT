@@ -1,6 +1,6 @@
 import os
 from lib import bvh2glo_simple
-from lib import importer
+from lib.BP_lib import import_abs_data
 import numpy as np
 from lib import SL_dict
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ import operator
 import math
 
 if __name__ == "__main__":
-    path = 'C:/Users/User/BP/Projekt/data_bvh'
+    path = 'C:/Users/User/Work/Sign_Language_BP/Projekt/data_bvh'
     file_list = os.listdir(path)
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('bvh' in f)]
@@ -21,9 +21,9 @@ if __name__ == "__main__":
     for filepath in file_list:  # iterování přes jednotlivé soubory
 
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
-        [dictionary, trajectory] = importer.import_abs_data(filepath)
+        [dictionary, trajectory] = import_abs_data(filepath)
         file_joints = open(
-            'C:/Users/User/BP/Projekt/data/joint_list.txt', 'r')
+            'C:/Users/User/Work/Sign_Language_BP/Projekt/data/joint_list.txt', 'r')
         joints = file_joints.readlines()
         joints = [f.rstrip() for f in joints]
 

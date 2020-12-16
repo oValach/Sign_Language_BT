@@ -1,19 +1,3 @@
-import os
-import math
-import operator
-import pandas as pd
-import numpy as np
-import pickle as pkl
-import matplotlib.pyplot as plt
-from dtw import dtw
-from fastdtw import fastdtw
-from datetime import datetime
-from collections import OrderedDict
-from scipy.spatial.distance import euclidean
-from lib import data_comp
-from lib import importer
-
-
 # vystřihne trajektory mezi předanými snímky, zatím neošetřeny výjimky
 def get_trajectory(trajectory, start, end):
     word_trajectory = trajectory[start:end, :, :]
@@ -22,6 +6,7 @@ def get_trajectory(trajectory, start, end):
 
 # najde prvních [amount] výskytů předaného znaku word napříč všemi soubory
 def find_word(word, amount):
+    import os
 
     path = 'C:/Users/User/BP/Projekt/data_bvh'
     file_list = os.listdir(path)
@@ -36,7 +21,7 @@ def find_word(word, amount):
     for filepath in file_list:  # iterování přes jednotlivé soubory
         test_file += 1
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
-        [dictionary, trajectory] = importer.import_abs_data(filepath)
+        [dictionary, trajectory] = import_abs_data(filepath)
 
         number = 0
         for _, val in enumerate(dictionary):
@@ -82,6 +67,12 @@ def find_word(word, amount):
 
 # spocte cetnosti vsech znaku vyskytujicich se v nahravkach
 def count_words(lower_limit, graph):
+    import os
+    from collections import OrderedDict
+    import matplotlib.pyplot as plt
+    import operator
+    import numpy as np
+
     lower_limit -= 1
     path = 'C:/Users/User/BP/Projekt/data_bvh'
     file_list = os.listdir(path)
@@ -95,7 +86,7 @@ def count_words(lower_limit, graph):
         #print('Prohledavani souboru cislo ' + str(test_file))
 
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
-        [dictionary, _] = importer.import_abs_data(filepath)
+        [dictionary, _] = import_abs_data(filepath)
 
         for _, val in enumerate(dictionary):
             for tmp_key in val.keys():
@@ -125,6 +116,11 @@ def count_words(lower_limit, graph):
 
 
 def dtws(type, word1, word2):
+    from dtw import dtw
+    from fastdtw import fastdtw
+    import numpy as np
+    from scipy.spatial.distance import euclidean
+
     file_joints = open('C:/Users/User/BP/Projekt/data/joint_list.txt', 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
@@ -197,23 +193,31 @@ def dtws(type, word1, word2):
 
 
 def compare_all():
+    import numpy as np
+
     DTW_DICT_MATRIX = {
         'RightHand': None,
         'LeftHand': None,
-        'RightShoulder': None,
-        'LeftShoulder': None
+        'RightArm': None,
+        'LeftArm': None,
+        'RightForeArm': None,
+        'LeftForeArm': None,
     }
     ID_DICT_MATRIX = {
         'RightHand': None,
         'LeftHand': None,
-        'RightShoulder': None,
-        'LeftShoulder': None
+        'RightArm': None,
+        'LeftArm': None,
+        'RightForeArm': None,
+        'LeftForeArm': None,
     }
     POSITION_DICT_MATRIX = {
         'RightHand': None,
         'LeftHand': None,
-        'RightShoulder': None,
-        'LeftShoulder': None
+        'RightArm': None,
+        'LeftArm': None,
+        'RightForeArm': None,
+        'LeftForeArm': None,
     }
 
     for v,k in enumerate(DTW_DICT_MATRIX):
@@ -260,39 +264,21 @@ def compare_all():
 
     return [DTW_DICT_MATRIX,ID_DICT_MATRIX,POSITION_DICT_MATRIX]
 
-if __name__ == "__main__":
-    """
-    word1 = 'bude'
-    word1_amount = 1
-    word2 = 'sobota'
-    word2_amount = 1
-    word1_traj = find_word(word1, word1_amount)
-    word2_traj = find_word(word2, word2_amount)
- 
-    word = 'bude'
-    [word1_traj, word2_traj] = find_word(word, 2)
-    alg_type = 'fastdtw'
-    start_time = datetime.now()
-    dtw_result = dtws(alg_type, word1_traj, word2_traj)
-    end_time = datetime.now()
 
-    print(str(alg_type) + ': ' + str(word) + ' vs ' + str(word))
-    [print(str(k)+': '+str(v)) for k, v in dtw_result.items()]
-    print('Duration: {}'.format(end_time - start_time))
-    
+def import_abs_data(filepath):
+    import numpy as np
+    import pickle as pkl
+    import os
 
-    [DTW_DICT,ID_DICT,POSITION_DICT] = compare_all()
+    filename = filepath[0:12]
+    path_converted = 'C:/Users/User/BP/Projekt/data_converted'
 
-    pkl_out = open('DTW_DICT.pickle', 'wb')
-    pkl.dump(DTW_DICT, pkl_out)
-    pkl_out.close()
+    dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
+    pkl_dict = open(dict_file, "rb")
+    dictionary = pkl.load(pkl_dict)
 
-    pkl_out = open('ID_DICT.pickle', 'wb')
-    pkl.dump(ID_DICT, pkl_out)
-    pkl_out.close()
+    traj_file = os.path.join(path_converted, 'trajectory_'+filename+'.pickle')
+    pkl_traj = open(traj_file, "rb")
+    trajectory = pkl.load(pkl_traj)
 
-    pkl_out = open('POSITION_DICT.pickle', 'wb')
-    pkl.dump(POSITION_DICT, pkl_out)
-    pkl_out.close()
-    """
-    count_words(6, True)
+    return dictionary, trajectory

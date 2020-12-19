@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
-from dtw import dtw
+import dtw
 from fastdtw import fastdtw
 from datetime import datetime
 from collections import OrderedDict

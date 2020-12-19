@@ -8,7 +8,7 @@ def get_trajectory(trajectory, start, end):
 def find_word(word, amount):
     import os
 
-    path = 'C:/Users/User/BP/Projekt/data_bvh'
+    path = 'D:/Work/BP/Sign_Language_BP/data_bvh'
     file_list = os.listdir(path)
 
     # vyhnuti se slozkam a ostatnim souborum
@@ -116,12 +116,12 @@ def count_words(lower_limit, graph):
 
 
 def dtws(type, word1, word2):
-    from dtw import dtw
+    import dtw
     from fastdtw import fastdtw
     import numpy as np
     from scipy.spatial.distance import euclidean
 
-    file_joints = open('C:/Users/User/BP/Projekt/data/joint_list.txt', 'r')
+    file_joints = open('D:/Work/BP/Sign_Language_BP/data/joint_list.txt', 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     if type == 'fastdtw':  # zrychlená metoda dtw
@@ -271,7 +271,7 @@ def import_abs_data(filepath):
     import os
 
     filename = filepath[0:12]
-    path_converted = 'C:/Users/User/BP/Projekt/data_converted'
+    path_converted = 'D:/Work/BP/Sign_Language_BP/data_converted'
 
     dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
     pkl_dict = open(dict_file, "rb")

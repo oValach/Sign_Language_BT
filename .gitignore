@@ -5,3 +5,5 @@ ENV
 .gitignore
 dtw-master/
 dtw.egg-info/
+data_bvh/
+data_converted/

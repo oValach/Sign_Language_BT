@@ -7,14 +7,15 @@ def get_trajectory(trajectory, start, end):
 # najde prvních [amount] výskytů předaného znaku word napříč všemi soubory
 def find_word(word, amount):
     import os
+    import pickle as pk
 
-    path = 'D:/Work/BP/Sign_Language_BP/data_bvh'
+    path = 'Sign_Language_BP/data_bvh'
     file_list = os.listdir(path)
 
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('.bvh' in f)]
 
-    if amount != 1: # pozaduji jeden vyskyt -> nechci vysledek appendovat do pole
+    if amount != 1:  # pozaduji jeden vyskyt -> nechci vysledek appendovat do pole
         word_trajectory = []
     current_amount = 0
     test_file = 0
@@ -26,7 +27,7 @@ def find_word(word, amount):
         number = 0
         for _, val in enumerate(dictionary):
 
-            if current_amount == amount: # nalezen pozadovany pocet
+            if current_amount == amount:  # nalezen pozadovany pocet
                 break
 
             number += 1
@@ -41,18 +42,22 @@ def find_word(word, amount):
                     end = val['annotation_Filip_bvh_frame'][1]
 
                     # fce jejiz vysledek ulozi do spolecneho pole trajektorii, nazev souboru a start a end snimek
-                    word_trajectory.append([get_trajectory(trajectory, start, end),filepath,start,end])
+                    word_trajectory.append([get_trajectory(trajectory, start, end), filepath, start, end])
 
-                elif tmp_key == 'sign_id' and val[tmp_key] == word and (amount == 1): # chci vratit pouze jeden vyskyt znaku
+                # chci vratit pouze jeden vyskyt znaku
+                elif tmp_key == 'sign_id' and val[tmp_key] == word and (amount == 1):
                     current_amount += 1
                     start = val['annotation_Filip_bvh_frame'][0]
                     end = val['annotation_Filip_bvh_frame'][1]
-                    word_trajectory = [get_trajectory(trajectory, start, end),filepath,start,end]
+                    word_trajectory = [get_trajectory(trajectory, start, end), filepath, start, end]
 
         if amount == -1 and test_file < 33:
             continue
         elif amount == -1 and test_file == 33:
             print('Cetnost slova "' + str(word)+'" je: ' + str(current_amount))
+            #pk_out = open("Sign_Language_BP/data_trajectory/"+str(word)+".pickle", 'wb')
+            #pk.dump(word_trajectory, pk_out)
+            #pk_out.close()
             break
         elif current_amount < amount:  # nenalezen pozadovany pocet vyskytu - > pokracuj
             continue
@@ -74,7 +79,7 @@ def count_words(lower_limit, graph):
     import numpy as np
 
     lower_limit -= 1
-    path = 'C:/Users/User/BP/Projekt/data_bvh'
+    path = 'Sign_Language_BP/data_bvh'
     file_list = os.listdir(path)
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('bvh' in f)]
@@ -83,7 +88,7 @@ def count_words(lower_limit, graph):
     word_dict = {}  # slovnik znaku
     for filepath in file_list:  # iterování přes jednotlivé soubory
         test_file += 1
-        #print('Prohledavani souboru cislo ' + str(test_file))
+        # print('Prohledavani souboru cislo ' + str(test_file))
 
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
         [dictionary, _] = import_abs_data(filepath)
@@ -98,7 +103,8 @@ def count_words(lower_limit, graph):
                     word_dict[val[tmp_key]] += 1  # opakujici se znak
 
     # serazeni slovniku cetnosti sestupne
-    word_counts_sorted = sorted(word_dict.items(), key=operator.itemgetter(1), reverse=False)
+    word_counts_sorted = sorted(
+        word_dict.items(), key=operator.itemgetter(1), reverse=True)
     word_counts_sorted_dict = OrderedDict()
     for k, v in word_counts_sorted:
         word_counts_sorted_dict[k] = v
@@ -116,12 +122,12 @@ def count_words(lower_limit, graph):
 
 
 def dtws(type, word1, word2):
-    import dtw
+    from dtw import dtw
     from fastdtw import fastdtw
     import numpy as np
     from scipy.spatial.distance import euclidean
 
-    file_joints = open('D:/Work/BP/Sign_Language_BP/data/joint_list.txt', 'r')
+    file_joints = open('Sign_Language_BP/data/joint_list.txt', 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     if type == 'fastdtw':  # zrychlená metoda dtw
@@ -138,17 +144,37 @@ def dtws(type, word1, word2):
                 # skip nechtenych joints
                 if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                     break
-                seq1x.append(word1[j][i][0])
-                seq1y.append(word1[j][i][1])  # append souradnic prvniho slova
-                seq1z.append(word1[j][i][2])
+                if ('Shoulder' in joints[i]):
+                    seq1x.append(word1[j][i][0])
+                    seq1y.append(word1[j][i][1])  # append souradnic prvniho slova
+                    seq1z.append(word1[j][i][2])
+                elif ('Right' in joints[i]):
+                    seq1x.append(word1[j][i][0] - RightShoulder[0][0])
+                    seq1y.append(word1[j][i][1] - RightShoulder[1][1])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - RightShoulder[2][2])
+                elif ('Left' in joints[i]):
+                    seq1x.append(word1[j][i][0] - LeftShoulder[0][0])
+                    seq1y.append(word1[j][i][1] - LeftShoulder[1][1])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - LeftShoulder[2][2])
+
 
             for j in range(len(word2)):  # pocet snimku
                 # skip nechtenych joints
                 if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                     break
-                seq2x.append(word2[j][i][0])
-                seq2y.append(word2[j][i][1])  # append souradnic druheho slova
-                seq2z.append(word2[j][i][2])
+                if ('Shoulder' in joints[i]):
+                    seq2x.append(word2[j][i][0])
+                    seq2y.append(word2[j][i][1])  # append souradnic druheho slova
+                    seq2z.append(word2[j][i][2])
+                elif ('Right' in joints[i]):
+                    seq2x.append(word2[j][i][0] - RightShoulder[3][0])
+                    seq2y.append(word2[j][i][1] - RightShoulder[4][1])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - RightShoulder[5][2])
+                elif ('Left' in joints[i]):
+                    seq2x.append(word2[j][i][0] - LeftShoulder[3][0])
+                    seq2y.append(word2[j][i][1] - LeftShoulder[4][1])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - LeftShoulder[5][2])
+
             # skip nechtenych joints
             if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                 continue
@@ -157,6 +183,12 @@ def dtws(type, word1, word2):
             dtwy = fastdtw(seq1y, seq2y, dist=euclidean)[0]
             dtwz = fastdtw(seq1z, seq2z, dist=euclidean)[0]
             dtw_dist[joints[i]] = dtwx+dtwy+dtwz
+
+            if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                RightShoulder = [seq1x,seq1y,seq1z,seq2x,seq2y,seq2z]
+            if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                LeftShoulder = [seq1x,seq1y,seq1z,seq2x,seq2y,seq2z]
+
     elif type == 'dtw':  # metoda dtw
         dtw_dist = {}
         # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla
@@ -194,6 +226,9 @@ def dtws(type, word1, word2):
 
 def compare_all():
     import numpy as np
+    import os
+    import pickle as pk
+    from timeit import default_timer as timer
 
     DTW_DICT_MATRIX = {
         'RightHand': None,
@@ -203,66 +238,80 @@ def compare_all():
         'RightForeArm': None,
         'LeftForeArm': None,
     }
-    ID_DICT_MATRIX = {
-        'RightHand': None,
-        'LeftHand': None,
-        'RightArm': None,
-        'LeftArm': None,
-        'RightForeArm': None,
-        'LeftForeArm': None,
-    }
-    POSITION_DICT_MATRIX = {
-        'RightHand': None,
-        'LeftHand': None,
-        'RightArm': None,
-        'LeftArm': None,
-        'RightForeArm': None,
-        'LeftForeArm': None,
-    }
 
-    for v,k in enumerate(DTW_DICT_MATRIX):
-        # ziskani vsech vyskytu slov
-        words = []
-        words_tmp = count_words(lower_limit = 1, graph = False)
-        end_size = 0
-        for _,v in enumerate(words_tmp):
-            words.append(v)
-            end_size = end_size + words_tmp[v]
+    # ziskani vsech vyskytu slov
+    WORDS = []
+    TOP_WORDS = []
+    words_all = []
+    words_tmp = count_words(lower_limit=1, graph=False)
+    end_size_rows = 0
+    end_size_cols = 0
+    for i, v in enumerate(words_tmp):
+        WORDS.append(v)
+        end_size_cols = end_size_cols + words_tmp[v]
+        if i < 2: # 12 nejcastejsich slov vuci vsem
+            TOP_WORDS.append(v)
+            end_size_rows = end_size_rows + words_tmp[v] #jejich cetnost = pocet radku distancni matice
+        for i in range(words_tmp[v]):
+            words_all.append(v) #seznam testovanych slov za sebou
 
-        DTW_MATRIX = np.zeros(shape=(1000,1000))
-        ID_MATRIX = np.zeros(shape=(1000,1000), dtype=object)
-        POSITION_MATRIX = np.zeros(shape=(1000,1000), dtype=object)
-        
-        idx1 = 0
-        for i in range(len(words)):
+    DTW_MATRIX1 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX2 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX3 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX4 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX5 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX6 = np.zeros(shape=(end_size_rows, 1000))
+    POSITION = np.zeros(shape=(1000), dtype=object)
 
-            word1 = words[i]
-            words1_found = find_word(word1,-1)
-            idx1 += 1 # dalsi radek ve vysledne matici
+    idx1 = 0
+    for i in range(len(TOP_WORDS)):  # pocet iteraci = cetnost vybranych testovanych znaku
+        word1 = TOP_WORDS[i]
+
+        pk_word = open("Sign_Language_BP/data_trajectory/"+str(word1)+".pickle", "rb")
+        words1_found = pk.load(pk_word)
+        #words1_found = find_word(word1, -1)
+
+        for k in range(len(words1_found)): # pocet iteraci = cetnost prvniho znaku, ktery zrovna testuji
+            idx1 += 1  # dalsi radek ve vysledne matici
+            print(f"---------------------{idx1-1}: {TOP_WORDS[i]}-----------------------")
             idx2 = 0
-            for j in range(len(words)):
+            [word1_traj, filename1, start1, end1] = words1_found[k]
 
-                word2 = words[j]
-                words2_found = find_word(word2,-1)
+            for j in range(len(WORDS)):  # pocet iteraci = pocet vsech ruznych znaku
+                word2 = WORDS[j]
+                print(f"{j}: {WORDS[j]}, {timer()}")
 
-                for k in range(len(words1_found)):
-                    [word1_traj,filename1,start1,end1] = words1_found[k]
-                    for l in range(len(words2_found)):
-                        [word2_traj,filename2,start2,end2] = words2_found[l]
-                        idx2 += 1 # dalsi sloupec v radku [idx1]
+                if TOP_WORDS[i] == WORDS[j]: # testuji dva stejne znaky, nemusim nacitat znovu trajektorie
+                    words2_found = words1_found
+                else:
+                    pk_word = open("Sign_Language_BP/data_trajectory/"+str(word2)+".pickle", "rb")
+                    words2_found = pk.load(pk_word)
+                #words2_found = find_word(word2, -1)
 
-                        dtw_result = dtws('dtw', word1_traj, word2_traj)
-                        DTW_MATRIX[idx1-1,idx2-1] = dtw_result['RightHand'] # naplneni matice DTW vysledku
+                for l in range(len(words2_found)):  # pocet iteraci = cetnost druheho znaku, ktery zrovna testuji
+                    [word2_traj, filename2, start2, end2] = words2_found[l]
+                    # dalsi sloupec v radku [idx1] (vysledna matice)
+                    idx2 += 1
+                    dtw_result = dtws('dtw', word1_traj, word2_traj)
 
-                        ID_MATRIX[idx1-1,idx2-1] = [word1,word2] # naplneni matice znaky poslanymi do dtw
+                    # naplneni matice DTW vysledku
+                    DTW_MATRIX1[idx1-1, idx2-1] = dtw_result['RightHand']
+                    DTW_MATRIX2[idx1-1, idx2-1] = dtw_result['LeftHand']
+                    DTW_MATRIX3[idx1-1, idx2-1] = dtw_result['RightArm']
+                    DTW_MATRIX4[idx1-1, idx2-1] = dtw_result['LeftArm']
+                    DTW_MATRIX5[idx1-1, idx2-1] = dtw_result['RightForeArm']
+                    DTW_MATRIX6[idx1-1, idx2-1] = dtw_result['LeftForeArm']
+                    if idx1-1 == 0:  # naplneni matice pozic jednotlivych znaku - pouze jednou
+                        POSITION[idx2-1] = [filename2, start2, end2]
 
-                        POSITION_MATRIX[idx1-1,idx2-1] = [[filename1,start1,end1],[filename2,start2,end2]] # naplneni matice puvodem znaku
+    DTW_DICT_MATRIX['RightHand'] = DTW_MATRIX1
+    DTW_DICT_MATRIX['LeftHand'] = DTW_MATRIX2
+    DTW_DICT_MATRIX['RightArm'] = DTW_MATRIX3
+    DTW_DICT_MATRIX['LeftArm'] = DTW_MATRIX4
+    DTW_DICT_MATRIX['RightForeArm'] = DTW_MATRIX5
+    DTW_DICT_MATRIX['LeftForeArm'] = DTW_MATRIX6
 
-        DTW_DICT_MATRIX[k] = DTW_MATRIX
-        ID_DICT_MATRIX[k] = ID_MATRIX
-        POSITION_DICT_MATRIX[k] = POSITION_MATRIX
-
-    return [DTW_DICT_MATRIX,ID_DICT_MATRIX,POSITION_DICT_MATRIX]
+    return [DTW_DICT_MATRIX, words_all, POSITION]
 
 
 def import_abs_data(filepath):
@@ -271,7 +320,7 @@ def import_abs_data(filepath):
     import os
 
     filename = filepath[0:12]
-    path_converted = 'D:/Work/BP/Sign_Language_BP/data_converted'
+    path_converted = 'Sign_Language_BP/data_converted'
 
     dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
     pkl_dict = open(dict_file, "rb")

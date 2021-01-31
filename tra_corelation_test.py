@@ -9,7 +9,7 @@ import operator
 import math
 
 if __name__ == "__main__":
-    path = 'C:/Users/User/Work/Sign_Language_BP/Projekt/data_bvh'
+    path = 'Sign_Language_BP/Projekt/data_bvh'
     file_list = os.listdir(path)
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('bvh' in f)]
@@ -22,8 +22,7 @@ if __name__ == "__main__":
 
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
         [dictionary, trajectory] = import_abs_data(filepath)
-        file_joints = open(
-            'C:/Users/User/Work/Sign_Language_BP/Projekt/data/joint_list.txt', 'r')
+        file_joints = open('Sign_Language_BP/Projekt/data/joint_list.txt', 'r')
         joints = file_joints.readlines()
         joints = [f.rstrip() for f in joints]
 
@@ -106,8 +105,7 @@ if __name__ == "__main__":
 
             output_avgDist_file = [0]*61
             for j in range(len(avg_dist_files_singly)):
-                maxIdx = avg_dist_files_singly.index(
-                    max(avg_dist_files_singly))
+                maxIdx = avg_dist_files_singly.index(max(avg_dist_files_singly))
                 maxAvgDist = avg_dist_files_singly[maxIdx]
                 output_avgDist_file[j] = [joints[maxIdx], maxAvgDist]
                 avg_dist_files_singly[maxIdx] = 0
@@ -145,19 +143,13 @@ if __name__ == "__main__":
             file.close()
 
             file = open("Projekt/soubory/results_speed.txt", "w")
-            file.write('Mean difference of maximal values: '+str(avgDifMax) +
-                       ' in {'+str(round(min(diffsmax), 3))+';'+str(round(max(diffsmax), 3))+'}\n')
-            file.write('Mean difference of average values: '+str(avgDifAvg) +
-                       ' in {'+str(round(min(diffsavg), 3))+';'+str(round(max(diffsavg), 3))+'}\n')
-            file.write(
-                'Positive values -> bigger average speed during transitions\n')
-            file.write(
-                'Negative values -> smaller average speed during transitions\n\n')
-            file.write(
-                'Joint,   Maximal speed [pre,tra],   Average speed [pre,tra]\n\n')
+            file.write('Mean difference of maximal values: '+str(avgDifMax) +' in {'+str(round(min(diffsmax), 3))+';'+str(round(max(diffsmax), 3))+'}\n')
+            file.write('Mean difference of average values: '+str(avgDifAvg) +' in {'+str(round(min(diffsavg), 3))+';'+str(round(max(diffsavg), 3))+'}\n')
+            file.write( 'Positive values -> bigger average speed during transitions\n')
+            file.write('Negative values -> smaller average speed during transitions\n\n')
+            file.write('Joint,   Maximal speed [pre,tra],   Average speed [pre,tra]\n\n')
             for idx in range(len(joints)):
-                file.write(str(joints[idx])+'    '+str(round(maxprevSpeed[idx], 3))+','+str(round(
-                    maxtraSpeed[idx], 3))+'        '+str(round(avgprevSpeed[idx], 3))+','+str(round(avgtraSpeed[idx], 3))+'\n')
+                file.write(str(joints[idx])+'    '+str(round(maxprevSpeed[idx], 3))+','+str(roundmaxtraSpeed[idx], 3))+'        '+str(round(avgprevSpeed[idx], 3))+','+str(round(avgtraSpeed[idx], 3))+'\n')
             file.close()
 
             file = open("Projekt/soubory/avg_distances.txt", "w")
@@ -169,8 +161,7 @@ if __name__ == "__main__":
                 file.write("\n")
             file.write("\n")
             for l in range(len(joints)):
-                file.write(str(
-                    output_avgDist_file[l][0]) + " : " + str(round(output_avgDist_file[l][1], 3))+"\n")
+                file.write(str(output_avgDist_file[l][0]) + " : " + str(round(output_avgDist_file[l][1], 3))+"\n")
 
             ''' Výstup v konzoli
                 print("BIGGEST correlations:" +str(maxes)+'\n')
@@ -181,6 +172,5 @@ if __name__ == "__main__":
                 print(
                     'Joint           , Maximals [pre,tra],  Average [pre,tra]\n\n')
                 for idx in range(len(joints)):
-                    print(str(joints[idx])+'    '+str(round(maxprevSpeed[idx],3))+','+str(round(maxtraSpeed[idx],3)
-                          )+'        '+str(round(avgprevSpeed[idx],3))+','+str(round(avgtraSpeed[idx],3))+'\n')
+                    print(str(joints[idx])+'    '+str(round(maxprevSpeed[idx],3))+','+str(round(maxtraSpeed[idx],3))+'        '+str(round(avgprevSpeed[idx],3))+','+str(round(avgtraSpeed[idx],3))+'\n')
                 '''

@@ -1,11 +1,29 @@
-# vystřihne trajektory mezi předanými snímky, zatím neošetřeny výjimky
 def get_trajectory(trajectory, start, end):
+    """Returns the trajectory coordinates between given frames
+
+    Args:
+        trajectory (list): Trajektory of input record in absolute coordinates
+        start (int): Starting frame of output selection
+        end (int): Ending frame of output selection
+
+    Returns:
+        [list]: Trajektory cut between start and end frame
+    """
     word_trajectory = trajectory[start:end, :, :]
     return word_trajectory
 
 
-# najde prvních [amount] výskytů předaného znaku word napříč všemi soubory
 def find_word(word, amount):
+    """Finds first [amount] of occurences of word across all files
+
+    Args:
+        word (string): A word to be found
+        amount (int): A number of occurencer of the word to find
+
+    Returns:
+        [list]: List of trajetories of found occurences of the given word
+    """
+
     import os
     import pickle as pk
 
@@ -70,8 +88,17 @@ def find_word(word, amount):
     return(word_trajectory)
 
 
-# spocte cetnosti vsech znaku vyskytujicich se v nahravkach
 def count_words(lower_limit, graph):
+    """Counts the frequency of words in speeches
+
+    Args:
+        lower_limit (int): A minimum amount of occurences for the word to be returned in an output list
+        graph (boolean): Yes/No for the graph to show
+
+    Returns:
+        [dictionary]: key = given word, value = number of occurences
+    """
+
     import os
     from collections import OrderedDict
     import matplotlib.pyplot as plt
@@ -103,8 +130,7 @@ def count_words(lower_limit, graph):
                     word_dict[val[tmp_key]] += 1  # opakujici se znak
 
     # serazeni slovniku cetnosti sestupne
-    word_counts_sorted = sorted(
-        word_dict.items(), key=operator.itemgetter(1), reverse=True)
+    word_counts_sorted = sorted(word_dict.items(), key=operator.itemgetter(1), reverse=True)
     word_counts_sorted_dict = OrderedDict()
     for k, v in word_counts_sorted:
         word_counts_sorted_dict[k] = v
@@ -122,6 +148,16 @@ def count_words(lower_limit, graph):
 
 
 def dtws(type, word1, word2):
+    """Counts dtw with euclidean distance between given word trajectory coordinate signals
+
+    Args:
+        type (string): 'dtw' for dtw or 'fastdtw' for fastdtw to count
+        word1 (list): First trajectory to count in dtw fcn
+        word2 (list): Second trajectory to count in dtw fcn
+
+    Returns:
+        [list]: A list of counted dtw values for each joint separately
+    """
     from dtw import dtw
     from fastdtw import fastdtw
     import numpy as np
@@ -252,6 +288,11 @@ def dtws(type, word1, word2):
 
 
 def compare_all():
+    """Computes dtw between majority of the words
+
+    Returns:
+        [list]: A list of dictionaries with results of dtw for each chosen joint
+    """
     import numpy as np
     import os
     import pickle as pk
@@ -342,6 +383,14 @@ def compare_all():
 
 
 def import_abs_data(filepath): 
+    """Imports trajectory data recalculated in absolute coordinates saved to .pickle
+
+    Args:
+        filepath (string): A name of the file to be imported
+
+    Returns:
+        [dictionary, list]: Dictionary of anotated words corresponding to returned list (trajectory)
+    """
     import numpy as np
     import pickle as pkl
     import os

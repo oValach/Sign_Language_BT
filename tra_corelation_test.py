@@ -118,7 +118,7 @@ if __name__ == "__main__":
             corr_coefs = []  # pole korelací částí těla s délkou transitiony přes všechny soubory
             for j in range(len(distancesJointsAll)):
                 corr_matrix = np.corrcoef(distancesJointsAll[j], fileRangesAll)
-                corr_coefs.append(corr_matrix[0][1])
+                corr_coefs.append(corr_matrix[0][1]) 
             m = 0
             maxes = {}
             corr_coefsCopy = corr_coefs.copy()

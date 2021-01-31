@@ -1,0 +1,68 @@
+Mean difference of maximal values: 2.93352055110376 in {-17.035;17.894}
+Mean difference of average values: 4.203137093977873 in {0.052;8.354}
+Positive values -> bigger average speed during transitions
+Negative values -> smaller average speed during transitions
+
+Joint,   Maximal speed [pre,tra],   Average speed [pre,tra]
+
+Hips    1.64,1.475        0.719,0.771
+Spine    2.368,2.16        0.968,1.03
+RightShoulder    2.616,3.645        1.267,1.467
+RightArm    4.22,4.43        2.307,2.43
+RightForeArm    21.844,26.501        11.211,13.729
+RightHand    35.52,42.682        18.097,21.075
+RightHandThumb1    35.032,43.543        18.381,21.543
+RightHandThumb1b    39.044,46.238        20.401,23.614
+RightHandThumb2    46.504,49.517        23.249,26.62
+RightHandThumb2b    50.944,51.899        25.411,29.33
+RightHandThumb3    55.77,55.769        27.765,32.385
+RightHandIndex1    52.309,62.426        27.358,29.806
+RightHandIndex1b    59.996,64.665        30.402,32.516
+RightHandIndex2    66.104,66.427        32.836,34.811
+RightHandIndex2b    72.691,71.999        34.923,36.765
+RightHandIndex3    78.977,77.045        36.646,38.504
+RightHandMiddle1    50.749,63.904        27.597,30.158
+RightHandMiddle1b    58.143,66.198        30.277,32.788
+RightHandMiddle2    68.738,68.426        33.025,35.685
+RightHandMiddle2b    77.149,66.938        33.975,37.051
+RightHandMiddle3    85.715,68.68        35.139,38.872
+RightHandRing1    48.098,63.905        27.357,30.238
+RightHandRing1b    56.191,66.205        29.499,32.377
+RightHandRing2    67.386,68.642        32.031,35.035
+RightHandRing2b    73.056,67.212        32.038,35.459
+RightHandRing3    78.851,65.935        32.185,36.299
+RightHandPinky1    45.578,63.473        27.101,30.398
+RightHandPinky1b    50.3,64.962        28.081,31.566
+RightHandPinky2    58.194,66.535        29.349,33.097
+RightHandPinky2b    61.705,65.461        29.56,33.602
+RightHandPinky3    65.264,64.531        29.872,34.287
+LeftShoulder    2.616,3.645        1.267,1.467
+LeftArm    4.628,4.113        1.943,2.121
+LeftForeArm    25.492,30.675        8.725,12.687
+LeftHand    37.934,44.534        11.392,16.746
+LeftHandThumb1    40.309,48.234        11.617,16.78
+LeftHandThumb1b    46.51,53.419        12.689,17.803
+LeftHandThumb2    54.999,59.212        14.12,19.145
+LeftHandThumb2b    63.232,65.968        15.496,20.661
+LeftHandThumb3    71.85,72.987        17.01,22.371
+LeftHandIndex1    64.219,63.921        16.345,22.063
+LeftHandIndex1b    73.543,70.203        17.982,23.615
+LeftHandIndex2    83.509,76.728        19.801,25.325
+LeftHandIndex2b    88.672,81.015        20.75,26.275
+LeftHandIndex3    94.249,85.36        21.771,27.32
+LeftHandMiddle1    64.254,65.831        16.595,22.728
+LeftHandMiddle1b    69.677,71.653        18.073,24.497
+LeftHandMiddle2    75.857,77.553        19.701,26.361
+LeftHandMiddle2b    75.323,78.737        20.483,27.355
+LeftHandMiddle3    83.748,80.166        21.353,28.494
+LeftHandRing1    60.313,65.897        16.153,22.831
+LeftHandRing1b    64.014,70.304        17.583,24.506
+LeftHandRing2    68.808,75.197        19.24,26.433
+LeftHandRing2b    69.458,75.44        19.774,27.227
+LeftHandRing3    76.224,75.819        20.379,28.25
+LeftHandPinky1    58.511,67.113        16.055,23.219
+LeftHandPinky1b    59.818,68.991        16.907,24.422
+LeftHandPinky2    61.62,71.013        17.86,25.757
+LeftHandPinky2b    59.624,71.566        18.269,26.383
+LeftHandPinky3    62.38,72.218        18.756,27.11
+Head    3.731,5.825        1.897,2.149

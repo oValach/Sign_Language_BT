@@ -149,13 +149,13 @@ def dtws(type, word1, word2):
                     seq1y.append(word1[j][i][1])  # append souradnic prvniho slova
                     seq1z.append(word1[j][i][2])
                 elif ('Right' in joints[i]):
-                    seq1x.append(word1[j][i][0] - RightShoulder[0][0])
-                    seq1y.append(word1[j][i][1] - RightShoulder[1][1])  # append souradnic prvniho slova s odectenim souradnic ramen
-                    seq1z.append(word1[j][i][2] - RightShoulder[2][2])
+                    seq1x.append(word1[j][i][0] - RightShoulder[0][j])
+                    seq1y.append(word1[j][i][1] - RightShoulder[1][j])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - RightShoulder[2][j])
                 elif ('Left' in joints[i]):
-                    seq1x.append(word1[j][i][0] - LeftShoulder[0][0])
-                    seq1y.append(word1[j][i][1] - LeftShoulder[1][1])  # append souradnic prvniho slova s odectenim souradnic ramen
-                    seq1z.append(word1[j][i][2] - LeftShoulder[2][2])
+                    seq1x.append(word1[j][i][0] - LeftShoulder[0][j])
+                    seq1y.append(word1[j][i][1] - LeftShoulder[1][j])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - LeftShoulder[2][j])
 
 
             for j in range(len(word2)):  # pocet snimku
@@ -167,13 +167,13 @@ def dtws(type, word1, word2):
                     seq2y.append(word2[j][i][1])  # append souradnic druheho slova
                     seq2z.append(word2[j][i][2])
                 elif ('Right' in joints[i]):
-                    seq2x.append(word2[j][i][0] - RightShoulder[3][0])
-                    seq2y.append(word2[j][i][1] - RightShoulder[4][1])  # append souradnic druheho slova s odectenim souradnic ramen
-                    seq2z.append(word2[j][i][2] - RightShoulder[5][2])
+                    seq2x.append(word2[j][i][0] - RightShoulder[3][j])
+                    seq2y.append(word2[j][i][1] - RightShoulder[4][j])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - RightShoulder[5][j])
                 elif ('Left' in joints[i]):
-                    seq2x.append(word2[j][i][0] - LeftShoulder[3][0])
-                    seq2y.append(word2[j][i][1] - LeftShoulder[4][1])  # append souradnic druheho slova s odectenim souradnic ramen
-                    seq2z.append(word2[j][i][2] - LeftShoulder[5][2])
+                    seq2x.append(word2[j][i][0] - LeftShoulder[3][j])
+                    seq2y.append(word2[j][i][1] - LeftShoulder[4][j])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - LeftShoulder[5][j])
 
             # skip nechtenych joints
             if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
@@ -203,24 +203,51 @@ def dtws(type, word1, word2):
                 # skip nechtenych joints
                 if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                     break
-                seq1x.append(word1[j][i][0])
-                seq1y.append(word1[j][i][1])
-                seq1z.append(word1[j][i][2])
+                if ('Shoulder' in joints[i]):
+                    seq1x.append(word1[j][i][0])
+                    seq1y.append(word1[j][i][1])  # append souradnic prvniho slova
+                    seq1z.append(word1[j][i][2])
+                elif ('Right' in joints[i]):
+                    seq1x.append(word1[j][i][0] - RightShoulder[0][j])
+                    seq1y.append(word1[j][i][1] - RightShoulder[1][j])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - RightShoulder[2][j])
+                elif ('Left' in joints[i]):
+                    seq1x.append(word1[j][i][0] - LeftShoulder[0][j])
+                    seq1y.append(word1[j][i][1] - LeftShoulder[1][j])  # append souradnic prvniho slova s odectenim souradnic ramen
+                    seq1z.append(word1[j][i][2] - LeftShoulder[2][j])
+
 
             for j in range(len(word2)):  # pocet snimku
                 # skip nechtenych joints
                 if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                     break
-                seq2x.append(word2[j][i][0])
-                seq2y.append(word2[j][i][1])
-                seq2z.append(word2[j][i][2])
+                if ('Shoulder' in joints[i]):
+                    seq2x.append(word2[j][i][0])
+                    seq2y.append(word2[j][i][1])  # append souradnic druheho slova
+                    seq2z.append(word2[j][i][2])
+                elif ('Right' in joints[i]):
+                    seq2x.append(word2[j][i][0] - RightShoulder[3][j])
+                    seq2y.append(word2[j][i][1] - RightShoulder[4][j])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - RightShoulder[5][j])
+                elif ('Left' in joints[i]):
+                    seq2x.append(word2[j][i][0] - LeftShoulder[3][j])
+                    seq2y.append(word2[j][i][1] - LeftShoulder[4][j])  # append souradnic druheho slova s odectenim souradnic ramen
+                    seq2z.append(word2[j][i][2] - LeftShoulder[5][j])
+
             # skip nechtenych joints
             if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
                 continue
-            dtwx = dtw(seq1x, seq2x, dist=euclidean)[0]
-            dtwy = dtw(seq1y, seq2y, dist=euclidean)[0]
-            dtwz = dtw(seq1z, seq2z, dist=euclidean)[0]
+            # 1. prvek výstupu = distance, 2. = path
+            dtwx = fastdtw(seq1x, seq2x, dist=euclidean)[0]
+            dtwy = fastdtw(seq1y, seq2y, dist=euclidean)[0]
+            dtwz = fastdtw(seq1z, seq2z, dist=euclidean)[0]
             dtw_dist[joints[i]] = dtwx+dtwy+dtwz
+
+            if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                RightShoulder = [seq1x,seq1y,seq1z,seq2x,seq2y,seq2z]
+            if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                LeftShoulder = [seq1x,seq1y,seq1z,seq2x,seq2y,seq2z]
+
     return dtw_dist
 
 
@@ -249,7 +276,7 @@ def compare_all():
     for i, v in enumerate(words_tmp):
         WORDS.append(v)
         end_size_cols = end_size_cols + words_tmp[v]
-        if i < 2: # 12 nejcastejsich slov vuci vsem
+        if i < 12: # 12 nejcastejsich slov vuci vsem
             TOP_WORDS.append(v)
             end_size_rows = end_size_rows + words_tmp[v] #jejich cetnost = pocet radku distancni matice
         for i in range(words_tmp[v]):
@@ -279,7 +306,7 @@ def compare_all():
 
             for j in range(len(WORDS)):  # pocet iteraci = pocet vsech ruznych znaku
                 word2 = WORDS[j]
-                print(f"{j}: {WORDS[j]}, {timer()}")
+                print(f"{j}: {WORDS[j]}, {round(timer(),2)} sec")
 
                 if TOP_WORDS[i] == WORDS[j]: # testuji dva stejne znaky, nemusim nacitat znovu trajektorie
                     words2_found = words1_found
@@ -314,7 +341,7 @@ def compare_all():
     return [DTW_DICT_MATRIX, words_all, POSITION]
 
 
-def import_abs_data(filepath):
+def import_abs_data(filepath): 
     import numpy as np
     import pickle as pkl
     import os

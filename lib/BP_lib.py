@@ -337,6 +337,7 @@ def compare_all():
 
         pk_word = open("Sign_Language_BP/data_trajectory/"+str(word1)+".pickle", "rb")
         words1_found = pk.load(pk_word)
+        pk_word.close()
         #words1_found = find_word(word1, -1)
 
         for k in range(len(words1_found)): # pocet iteraci = cetnost prvniho znaku, ktery zrovna testuji
@@ -354,6 +355,7 @@ def compare_all():
                 else:
                     pk_word = open("Sign_Language_BP/data_trajectory/"+str(word2)+".pickle", "rb")
                     words2_found = pk.load(pk_word)
+                    pk_word.close()
                 #words2_found = find_word(word2, -1)
 
                 for l in range(len(words2_found)):  # pocet iteraci = cetnost druheho znaku, ktery zrovna testuji
@@ -401,9 +403,11 @@ def import_abs_data(filepath):
     dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
     pkl_dict = open(dict_file, "rb")
     dictionary = pkl.load(pkl_dict)
+    pkl_dict.close()
 
     traj_file = os.path.join(path_converted, 'trajectory_'+filename+'.pickle')
     pkl_traj = open(traj_file, "rb")
     trajectory = pkl.load(pkl_traj)
+    pkl_traj.close()
 
     return dictionary, trajectory

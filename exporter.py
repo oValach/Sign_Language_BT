@@ -8,21 +8,23 @@ from lib import data_comp
 import operator
 import math
 
-BVH_file = 'C:/Users/User/Work/BP/Projekt/data_bvh/16_05_20_a_R.bvh'
-dictionary_file = 'C:/Users/User/Work/BP/Projekt/data/ultimate_dictionary2.txt'
+path = 'Sign_Language_BP/data_bvh'
+file_list = os.listdir(path)
+file_list = [f for f in file_list if ('bvh' in f)]
 
-joints, trajectory = bvh2glo_simple.calculate(BVH_file)
-frames, joint_id, channels = np.shape(trajectory)
+done_files = 0
+for filepath in file_list:  # iterování přes jednotlivé soubory
+    BVH_file = 'Sign_Language_BP/data_bvh/' + filepath
+    dictionary_file = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
 
-dictionary = SL_dict.search_take_file(dictionary_file, BVH_file)
+    joints, trajectory = bvh2glo_simple.calculate(BVH_file)
 
-file = open("dict_test2.txt", "a")
-file.write(str(dictionary))
+    dictionary = SL_dict.search_take_file(dictionary_file, BVH_file)
+    
+    pk_out = open('Sign_Language_BP/data_converted/dictionary_'+filepath[0:12]+'.pickle', 'wb')
+    pk.dump(dictionary, pk_out)
+    pk_out.close()
 
-pk_out = open('dictionary.pickle', 'wb')
-pk.dump(dictionary, pk_out)
-pk_out.close()
-
-pk_out = open('trajectory.pickle', 'wb')
-pk.dump(trajectory, pk_out)
-pk_out.close()
+    pk_out = open('Sign_Language_BP/data_converted/trajectory_'+filepath[0:12]+'.pickle', 'wb')
+    pk.dump(trajectory, pk_out)
+    pk_out.close()

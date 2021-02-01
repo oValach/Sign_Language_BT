@@ -20,11 +20,13 @@ for filepath in file_list:  # iterování přes jednotlivé soubory
     joints, trajectory = bvh2glo_simple.calculate(BVH_file)
 
     dictionary = SL_dict.search_take_file(dictionary_file, BVH_file)
+
+    filename = os.path.splitext(filepath)[0]
     
-    pk_out = open('Sign_Language_BP/data_converted/dictionary_'+filepath[0:12]+'.pickle', 'wb')
+    pk_out = open('Sign_Language_BP/data_converted/dictionary_'+filename+'.pickle', 'wb')
     pk.dump(dictionary, pk_out)
     pk_out.close()
 
-    pk_out = open('Sign_Language_BP/data_converted/trajectory_'+filepath[0:12]+'.pickle', 'wb')
+    pk_out = open('Sign_Language_BP/data_converted/trajectory_'+filename+'.pickle', 'wb')
     pk.dump(trajectory, pk_out)
     pk_out.close()

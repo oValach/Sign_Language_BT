@@ -7,7 +7,6 @@ import numpy as np
 import math
 
 if __name__ == "__main__":
-
     DTW = compare_all()
 
     pk_out = open('DTW.pickle', 'wb')

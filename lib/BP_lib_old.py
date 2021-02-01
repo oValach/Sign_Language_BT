@@ -147,10 +147,11 @@ def count_words(lower_limit, graph):
     return(word_counts_sorted_dict)
 
 
-def dtw_dist(word1, word2):
+def dtws(type, word1, word2):
     """Counts dtw with euclidean distance between given word trajectory coordinate signals
 
     Args:
+        type (string): 'dtw' for dtw or 'fastdtw' for fastdtw to count
         word1 (list): First trajectory to count in dtw fcn
         word2 (list): Second trajectory to count in dtw fcn
 
@@ -158,69 +159,130 @@ def dtw_dist(word1, word2):
         [list]: A list of counted dtw values for each joint separately
     """
     from dtaidistance import dtw
+    from fastdtw import fastdtw
     import numpy as np
+    from scipy.spatial.distance import euclidean
 
     file_joints = open('Sign_Language_BP/data/joint_list.txt', 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
-    dtw_dist = {}
-    # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla
-    for i in range(len(joints)):  # joint
-        seq1x = np.zeros(shape=(len(word1)),dtype=np.double)
-        seq1y = np.zeros(shape=(len(word1)),dtype=np.double)
-        seq1z = np.zeros(shape=(len(word1)),dtype=np.double)
-        seq2x = np.zeros(shape=(len(word2)),dtype=np.double)
-        seq2y = np.zeros(shape=(len(word2)),dtype=np.double)
-        seq2z = np.zeros(shape=(len(word2)),dtype=np.double)
+    if type == 'fastdtw':  # zrychlená metoda dtw
+        dtw_dist = {}
+        # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla postupně přes x,z,y
+        for i in range(len(joints)):  # joint
+            seq1x = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq1y = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq1z = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq2x = np.zeros(shape=(len(word2)),dtype=np.double)
+            seq2y = np.zeros(shape=(len(word2)),dtype=np.double)
+            seq2z = np.zeros(shape=(len(word2)),dtype=np.double)
+            for j in range(len(word1)):  # pocet snimku
+                # skip nechtenych joints
+                if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+                    break
+                if ('Shoulder' in joints[i]):
+                    seq1x[j] = word1[j][i][0]
+                    seq1y[j] = word1[j][i][1]  # souradnice prvniho slova za podminky ramene
+                    seq1z[j] = word1[j][i][2]
+                elif ('Right' in joints[i]):
+                    seq1x[j] = word1[j][i][0] - RightShoulder[0][j]
+                    seq1y[j] = word1[j][i][1] - RightShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                    seq1z[j] = word1[j][i][2] - RightShoulder[2][j]
+                elif ('Left' in joints[i]):
+                    seq1x[j] = word1[j][i][0] - LeftShoulder[0][j]
+                    seq1y[j] = word1[j][i][1] - LeftShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                    seq1z[j] = word1[j][i][2] - LeftShoulder[2][j]
 
-        for j in range(len(word1)):  # pocet snimku prvniho slova
+
+            for j in range(len(word2)):  # pocet snimku
+                # skip nechtenych joints
+                if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+                    break
+                if ('Shoulder' in joints[i]):
+                    seq2x[j] = word2[j][i][0]
+                    seq2y[j] = word2[j][i][1]  # souradnice druheho slova za podminky ramene
+                    seq2z[j] = word2[j][i][2]
+                elif ('Right' in joints[i]):
+                    seq2x[j] = word2[j][i][0] - RightShoulder[3][j]
+                    seq2y[j] = word2[j][i][1] - RightShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                    seq2z[j] = word2[j][i][2] - RightShoulder[5][j]
+                elif ('Left' in joints[i]):
+                    seq2x[j] = word2[j][i][0] - LeftShoulder[3][j]
+                    seq2y[j] = word2[j][i][1] - LeftShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                    seq2z[j] = word2[j][i][2] - LeftShoulder[5][j]
+
             # skip nechtenych joints
             if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
-                break
-            if ('Shoulder' in joints[i]):
-                seq1x[j] = word1[j][i][0]
-                seq1y[j] = word1[j][i][1]  # souradnice prvniho slova za podminky ramene
-                seq1z[j] = word1[j][i][2]
-            elif ('Right' in joints[i]):
-                seq1x[j] = word1[j][i][0] - RightShoulder[0][j]
-                seq1y[j] = word1[j][i][1] - RightShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
-                seq1z[j] = word1[j][i][2] - RightShoulder[2][j]
-            elif ('Left' in joints[i]):
-                seq1x[j] = word1[j][i][0] - LeftShoulder[0][j]
-                seq1y[j] = word1[j][i][1] - LeftShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
-                seq1z[j] = word1[j][i][2] - LeftShoulder[2][j]
+                continue
+            # 1. prvek výstupu = distance, 2. = path
+            dtwx = fastdtw(seq1x, seq2x, dist=euclidean)[0]
+            dtwy = fastdtw(seq1y, seq2y, dist=euclidean)[0]
+            dtwz = fastdtw(seq1z, seq2z, dist=euclidean)[0]
+            dtw_dist[joints[i]] = dtwx+dtwy+dtwz
+
+            if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                RightShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
+            if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                LeftShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
+
+    elif type == 'dtw':  # metoda dtw
+        dtw_dist = {}
+        # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla
+        for i in range(len(joints)):  # joint
+            seq1x = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq1y = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq1z = np.zeros(shape=(len(word1)),dtype=np.double)
+            seq2x = np.zeros(shape=(len(word2)),dtype=np.double)
+            seq2y = np.zeros(shape=(len(word2)),dtype=np.double)
+            seq2z = np.zeros(shape=(len(word2)),dtype=np.double)
+            for j in range(len(word1)):  # pocet snimku
+                # skip nechtenych joints
+                if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+                    break
+                if ('Shoulder' in joints[i]):
+                    seq1x[j] = word1[j][i][0]
+                    seq1y[j] = word1[j][i][1]  # souradnice prvniho slova za podminky ramene
+                    seq1z[j] = word1[j][i][2]
+                elif ('Right' in joints[i]):
+                    seq1x[j] = word1[j][i][0] - RightShoulder[0][j]
+                    seq1y[j] = word1[j][i][1] - RightShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                    seq1z[j] = word1[j][i][2] - RightShoulder[2][j]
+                elif ('Left' in joints[i]):
+                    seq1x[j] = word1[j][i][0] - LeftShoulder[0][j]
+                    seq1y[j] = word1[j][i][1] - LeftShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                    seq1z[j] = word1[j][i][2] - LeftShoulder[2][j]
 
 
-        for j in range(len(word2)):  # pocet snimku druheho slova
+            for j in range(len(word2)):  # pocet snimku
+                # skip nechtenych joints
+                if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+                    break
+                if ('Shoulder' in joints[i]):
+                    seq2x[j] = word2[j][i][0]
+                    seq2y[j] = word2[j][i][1]  # souradnice druheho slova za podminky ramene
+                    seq2z[j] = word2[j][i][2]
+                elif ('Right' in joints[i]):
+                    seq2x[j] = word2[j][i][0] - RightShoulder[3][j]
+                    seq2y[j] = word2[j][i][1] - RightShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                    seq2z[j] = word2[j][i][2] - RightShoulder[5][j]
+                elif ('Left' in joints[i]):
+                    seq2x[j] = word2[j][i][0] - LeftShoulder[3][j]
+                    seq2y[j] = word2[j][i][1] - LeftShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                    seq2z[j] = word2[j][i][2] - LeftShoulder[5][j]
+
             # skip nechtenych joints
             if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
-                break
-            if ('Shoulder' in joints[i]):
-                seq2x[j] = word2[j][i][0]
-                seq2y[j] = word2[j][i][1]  # souradnice druheho slova za podminky ramene
-                seq2z[j] = word2[j][i][2]
-            elif ('Right' in joints[i]):
-                seq2x[j] = word2[j][i][0] - RightShoulder[3][j]
-                seq2y[j] = word2[j][i][1] - RightShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
-                seq2z[j] = word2[j][i][2] - RightShoulder[5][j]
-            elif ('Left' in joints[i]):
-                seq2x[j] = word2[j][i][0] - LeftShoulder[3][j]
-                seq2y[j] = word2[j][i][1] - LeftShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
-                seq2z[j] = word2[j][i][2] - LeftShoulder[5][j]
+                continue
+            # 1. prvek výstupu = distance, 2. = path
+            dtwx = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
+            dtwy = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
+            dtwz = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
+            dtw_dist[joints[i]] = dtwx+dtwy+dtwz
 
-        # skip nechtenych joints
-        if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
-            continue
-        # 1. prvek výstupu = distance, 2. = path
-        dtwx = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtwy = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtwz = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtw_dist[joints[i]] = dtwx+dtwy+dtwz
-
-        if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
-            RightShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
-        if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
-            LeftShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
+            if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                RightShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
+            if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+                LeftShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
 
     return dtw_dist
 
@@ -305,7 +367,7 @@ def compare_all():
                     idx2 += 1
 
                     times = timer()
-                    dtw_result = dtw_dist(word1_traj_np, word2_traj_np)
+                    dtw_result = dtws('dtw', word1_traj_np, word2_traj_np)
                     timee = timer()
                     print('4: '+str(timee-times))
 

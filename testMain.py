@@ -12,9 +12,12 @@ if __name__ == "__main__":
     path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
     path_converted = 'Sign_Language_BP/data_converted'
 
+    times = timer()
     DTW = compare_all(path_bvh,path_datatrajectory,path_jointlist, path_converted)
+    timee = timer()
+    print(timee-times)
 
-    pk_out = open('DTW.pickle', 'wb')
+    pk_out = open('Sign_Language_BP/output_files/DTW.pickle', 'wb')
     pk.dump(DTW, pk_out)
     pk_out.close()
 

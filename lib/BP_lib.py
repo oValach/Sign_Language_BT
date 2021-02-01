@@ -312,10 +312,10 @@ def compare_all(path_bvh, path_trajectory, path_jointlist, path_converted):
                     # dalsi sloupec v radku [idx1] (vysledna matice)
                     idx2 += 1
 
-                    times = timer()
+                    #times = timer()
                     dtw_result = dtw_dist(word1_traj_np, word2_traj_np, path_jointlist)
-                    timee = timer()
-                    print('4: '+str(timee-times))
+                    #timee = timer()
+                    #print('4: '+str(timee-times))
 
                     # naplneni matice DTW vysledku
                     DTW_MATRIX1[idx1-1, idx2-1] = dtw_result['RightHand']

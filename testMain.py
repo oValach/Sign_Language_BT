@@ -7,7 +7,12 @@ import numpy as np
 import math
 
 if __name__ == "__main__":
-    DTW = compare_all()
+    path_bvh = 'Sign_Language_BP/data_bvh'
+    path_datatrajectory = 'Sign_Language_BP/data_trajectory'
+    path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
+    path_converted = 'Sign_Language_BP/data_converted'
+
+    DTW = compare_all(path_bvh,path_datatrajectory,path_jointlist, path_converted)
 
     pk_out = open('DTW.pickle', 'wb')
     pk.dump(DTW, pk_out)

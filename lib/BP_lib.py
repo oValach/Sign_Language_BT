@@ -12,13 +12,14 @@ def get_trajectory(trajectory, start, end):
     word_trajectory = trajectory[start:end, :, :]
     return word_trajectory
 
-
-def find_word(word, amount):
+def find_word(word, amount, path_bvh, path_converted):
     """Finds first [amount] of occurences of word across all files
 
     Args:
         word (string): A word to be found
         amount (int): A number of occurencer of the word to find
+        path (string): A path to the folder with .bvh data, for example 'Sign_Language_BP/data_bvh'
+        path_converted (string): A path to the folder with trajectory and dictionary in .pickle for each .bvh file
 
     Returns:
         [list]: List of trajetories of found occurences of the given word
@@ -27,8 +28,7 @@ def find_word(word, amount):
     import os
     import pickle as pk
 
-    path = 'Sign_Language_BP/data_bvh'
-    file_list = os.listdir(path)
+    file_list = os.listdir(path_bvh)
 
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('.bvh' in f)]
@@ -40,7 +40,7 @@ def find_word(word, amount):
     for filepath in file_list:  # iterování přes jednotlivé soubory
         test_file += 1
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
-        [dictionary, trajectory] = import_abs_data(filepath)
+        [dictionary, trajectory] = import_abs_data(filepath, path_converted)
 
         number = 0
         for _, val in enumerate(dictionary):
@@ -88,12 +88,14 @@ def find_word(word, amount):
     return(word_trajectory)
 
 
-def count_words(lower_limit, graph):
+def count_words(lower_limit, graph, path, path_converted):
     """Counts the frequency of words in speeches
 
     Args:
         lower_limit (int): A minimum amount of occurences for the word to be returned in an output list
         graph (boolean): Yes/No for the graph to show
+        path (string): A path to the folder with .bvh data, for example 'Sign_Language_BP/data_bvh'
+        path_converted (string): A path to the folder with trajectory and dictionary in .pickle for each .bvh file
 
     Returns:
         [dictionary]: key = given word, value = number of occurences
@@ -106,7 +108,6 @@ def count_words(lower_limit, graph):
     import numpy as np
 
     lower_limit -= 1
-    path = 'Sign_Language_BP/data_bvh'
     file_list = os.listdir(path)
     # vyhnuti se slozkam a ostatnim souborum
     file_list = [f for f in file_list if ('bvh' in f)]
@@ -118,7 +119,7 @@ def count_words(lower_limit, graph):
         # print('Prohledavani souboru cislo ' + str(test_file))
 
         # nahrani prepoctenych dat z angularnich - dictionary, trajectory
-        [dictionary, _] = import_abs_data(filepath)
+        [dictionary, _] = import_abs_data(filepath, path_converted)
 
         for _, val in enumerate(dictionary):
             for tmp_key in val.keys():
@@ -147,12 +148,13 @@ def count_words(lower_limit, graph):
     return(word_counts_sorted_dict)
 
 
-def dtw_dist(word1, word2):
+def dtw_dist(word1, word2, path_jointlist):
     """Counts dtw with euclidean distance between given word trajectory coordinate signals
 
     Args:
         word1 (list): First trajectory to count in dtw fcn
         word2 (list): Second trajectory to count in dtw fcn
+        path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
 
     Returns:
         [list]: A list of counted dtw values for each joint separately
@@ -160,7 +162,7 @@ def dtw_dist(word1, word2):
     from dtaidistance import dtw
     import numpy as np
 
-    file_joints = open('Sign_Language_BP/data/joint_list.txt', 'r')
+    file_joints = open(path_jointlist, 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     dtw_dist = {}
@@ -225,8 +227,14 @@ def dtw_dist(word1, word2):
     return dtw_dist
 
 
-def compare_all():
+def compare_all(path_bvh, path_trajectory, path_jointlist, path_converted):
     """Computes dtw between majority of the words
+
+    Args:
+        path_bvh (string): A path to the folder with .bvh files
+        path_trajectory (string): A path to the folder with each word trajectory in .pickle
+        path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
+        path_converted (string): A path to the folder with trajectory and dictionary in .pickle for each .bvh file
 
     Returns:
         [list]: A list of dictionaries with results of dtw for each chosen joint
@@ -249,7 +257,7 @@ def compare_all():
     WORDS = []
     TOP_WORDS = []
     words_all = []
-    words_tmp = count_words(lower_limit=1, graph=False)
+    words_tmp = count_words(1, False, path_bvh, path_converted)
     end_size_rows = 0
     end_size_cols = 0
     for i, v in enumerate(words_tmp):
@@ -273,11 +281,11 @@ def compare_all():
     for i in range(len(TOP_WORDS)):  # pocet iteraci = cetnost vybranych testovanych znaku
         word1 = TOP_WORDS[i]
 
-        pk_word = open("Sign_Language_BP/data_trajectory/"+str(word1)+".pickle", "rb")
+        pk_word = open(os.path.join(path_trajectory,str(word1))+".pickle", "rb")
         words1_found = pk.load(pk_word)
         pk_word.close()
 
-        #words1_found = find_word(word1, -1)
+        #words1_found = find_word(word1, -1, 'Sign_Language_BP/data_bvh')
 
         for k in range(len(words1_found)): # pocet iteraci = cetnost prvniho znaku, ktery zrovna testuji
             idx1 += 1  # dalsi radek ve vysledne matici
@@ -293,10 +301,10 @@ def compare_all():
                 if TOP_WORDS[i] == WORDS[j]: # testuji dva stejne znaky, nemusim nacitat znovu trajektorie
                     words2_found = words1_found
                 else:
-                    pk_word = open("Sign_Language_BP/data_trajectory/"+str(word2)+".pickle", "rb")
+                    pk_word = open(os.path.join(path_trajectory,str(word2))+".pickle", "rb")
                     words2_found = pk.load(pk_word)
                     pk_word.close()
-                    #words2_found = find_word(word2, -1)
+                    #words2_found = find_word(word2, -1, 'Sign_Language_BP/data_bvh')
 
                 for l in range(len(words2_found)):  # pocet iteraci = cetnost druheho znaku, ktery zrovna testuji
                     [word2_traj, filename2, start2, end2] = words2_found[l]
@@ -305,7 +313,7 @@ def compare_all():
                     idx2 += 1
 
                     times = timer()
-                    dtw_result = dtw_dist(word1_traj_np, word2_traj_np)
+                    dtw_result = dtw_dist(word1_traj_np, word2_traj_np, path_jointlist)
                     timee = timer()
                     print('4: '+str(timee-times))
 
@@ -330,11 +338,12 @@ def compare_all():
     return [DTW_DICT_MATRIX, words_all, POSITION]
 
 
-def import_abs_data(filepath): 
+def import_abs_data(filepath, path_converted): 
     """Imports trajectory data recalculated in absolute coordinates saved to .pickle
 
     Args:
         filepath (string): A name of the file to be imported
+        path_converted (string): A path to the folder with converted trajectory and dictionary to the .pickle
 
     Returns:
         [dictionary, list]: Dictionary of anotated words corresponding to returned list (trajectory)
@@ -343,9 +352,7 @@ def import_abs_data(filepath):
     import pickle as pkl
     import os
 
-    os.path.splitext("/path/to/some/file.txt")[0]
     filename = os.path.splitext(filepath)[0]
-    path_converted = 'Sign_Language_BP/data_converted'
 
     dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
     pkl_dict = open(dict_file, "rb")

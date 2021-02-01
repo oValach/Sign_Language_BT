@@ -9,3 +9,4 @@ data_bvh/
 data_converted/
 data_trajectory/
 test.py
+dtw_tests.py

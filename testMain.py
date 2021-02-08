@@ -7,11 +7,12 @@ import numpy as np
 import math
 
 if __name__ == "__main__":
+
     path_bvh = 'Sign_Language_BP/data_bvh'
     path_datatrajectory = 'Sign_Language_BP/data_trajectory'
     path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
     path_converted = 'Sign_Language_BP/data_converted'
-
+    """
     times = timer()
     DTW = compare_all(path_bvh,path_datatrajectory,path_jointlist, path_converted)
     timee = timer()
@@ -62,4 +63,3 @@ if __name__ == "__main__":
             file.write(str(out_words[minIdx1]) + ',' + str(out_words[minIdx2]) + ' : ' + str(minVal) + '    '+str(out_words[minIdx1]==out_words[minIdx2]) + '\n')
             if counter == 101:
                 file.write(str(equal) + '/' + str(nonequal) + '\n')
-    """

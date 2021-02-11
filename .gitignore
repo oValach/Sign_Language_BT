@@ -1,6 +1,3 @@
-venv
-env
-ENV
 .vscode/
 .gitignore
 dtw-master/
@@ -11,3 +8,8 @@ data_trajectory/
 test.py
 dtw_tests.py
 prepis.py
+bvh_actual/
+source_data/
+source_words/
+data/meta.pkl
+data/traj.pkl

@@ -1,3 +1,13 @@
+from collections import OrderedDict
+from dtaidistance import dtw
+from timeit import default_timer as timer
+import os
+import operator
+import numpy as np
+import pickle as pk
+import matplotlib.pyplot as plt
+
+
 def get_trajectory(trajectory, start, end):
     """Returns the trajectory coordinates between given frames
 
@@ -12,6 +22,7 @@ def get_trajectory(trajectory, start, end):
     word_trajectory = trajectory[start:end, :, :]
     return word_trajectory
 
+
 def find_word(word, amount, path_bvh, path_converted):
     """Finds first [amount] of occurences of word across all files
 
@@ -25,9 +36,6 @@ def find_word(word, amount, path_bvh, path_converted):
         [list]: List of trajetories of found occurences of the given word
     """
 
-    import os
-    import pickle as pk
-
     file_list = os.listdir(path_bvh)
 
     # vyhnuti se slozkam a ostatnim souborum
@@ -35,6 +43,7 @@ def find_word(word, amount, path_bvh, path_converted):
 
     if amount != 1:  # pozaduji jeden vyskyt -> nechci vysledek appendovat do pole
         word_trajectory = []
+
     current_amount = 0
     test_file = 0
     for filepath in file_list:  # iterování přes jednotlivé soubory
@@ -55,12 +64,16 @@ def find_word(word, amount, path_bvh, path_converted):
                 # pokud byl nalezen hledany znak
                 if tmp_key == 'sign_id' and val[tmp_key] == word and (amount != 1):
 
+                    #meta.append([val['sign_name'],filepath,val[tmp_key]])
+
                     current_amount += 1
                     start = val['annotation_Filip_bvh_frame'][0]
                     end = val['annotation_Filip_bvh_frame'][1]
 
+                    #traj.append(get_trajectory(trajectory, start, end))
+
                     # fce jejiz vysledek ulozi do spolecneho pole trajektorii, nazev souboru a start a end snimek
-                    word_trajectory.append([get_trajectory(trajectory, start, end), filepath, start, end])
+                    word_trajectory.append([get_trajectory(trajectory, start, end), filepath, start, end, ])
 
                 # chci vratit pouze jeden vyskyt znaku
                 elif tmp_key == 'sign_id' and val[tmp_key] == word and (amount == 1):
@@ -100,12 +113,6 @@ def count_words(lower_limit, graph, path, path_converted):
     Returns:
         [dictionary]: key = given word, value = number of occurences
     """
-
-    import os
-    from collections import OrderedDict
-    import matplotlib.pyplot as plt
-    import operator
-    import numpy as np
 
     lower_limit -= 1
     file_list = os.listdir(path)
@@ -159,8 +166,6 @@ def dtw_dist(word1, word2, path_jointlist):
     Returns:
         [list]: A list of counted dtw values for each joint separately
     """
-    from dtaidistance import dtw
-    import numpy as np
 
     file_joints = open(path_jointlist, 'r')
     joints = file_joints.readlines()
@@ -177,52 +182,42 @@ def dtw_dist(word1, word2, path_jointlist):
 
         for j in range(len(word1)):  # pocet snimku prvniho slova
             # skip nechtenych joints
-            if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+            if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Shoulder' in joints[i]) or ('Hips' in joints[i]):
                 break
-            if ('Shoulder' in joints[i]):
+            if ('Spine' in joints[i]):
                 seq1x[j] = word1[j][i][0]
                 seq1y[j] = word1[j][i][1]  # souradnice prvniho slova za podminky ramene
                 seq1z[j] = word1[j][i][2]
-            elif ('Right' in joints[i]):
-                seq1x[j] = word1[j][i][0] - RightShoulder[0][j]
-                seq1y[j] = word1[j][i][1] - RightShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
-                seq1z[j] = word1[j][i][2] - RightShoulder[2][j]
-            elif ('Left' in joints[i]):
-                seq1x[j] = word1[j][i][0] - LeftShoulder[0][j]
-                seq1y[j] = word1[j][i][1] - LeftShoulder[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
-                seq1z[j] = word1[j][i][2] - LeftShoulder[2][j]
+            else:
+                seq1x[j] = word1[j][i][0] - Spine[0][j]
+                seq1y[j] = word1[j][i][1] - Spine[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                seq1z[j] = word1[j][i][2] - Spine[2][j]
 
 
         for j in range(len(word2)):  # pocet snimku druheho slova
             # skip nechtenych joints
-            if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+            if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Shoulder' in joints[i]) or ('Hips' in joints[i]):
                 break
-            if ('Shoulder' in joints[i]):
+            if ('Spine' in joints[i]):
                 seq2x[j] = word2[j][i][0]
                 seq2y[j] = word2[j][i][1]  # souradnice druheho slova za podminky ramene
                 seq2z[j] = word2[j][i][2]
-            elif ('Right' in joints[i]):
-                seq2x[j] = word2[j][i][0] - RightShoulder[3][j]
-                seq2y[j] = word2[j][i][1] - RightShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
-                seq2z[j] = word2[j][i][2] - RightShoulder[5][j]
-            elif ('Left' in joints[i]):
-                seq2x[j] = word2[j][i][0] - LeftShoulder[3][j]
-                seq2y[j] = word2[j][i][1] - LeftShoulder[4][j]  # souradnice druheho slova s odectenim souradnic ramen
-                seq2z[j] = word2[j][i][2] - LeftShoulder[5][j]
+            else:
+                seq2x[j] = word2[j][i][0] - Spine[3][j]
+                seq2y[j] = word2[j][i][1] - Spine[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                seq2z[j] = word2[j][i][2] - Spine[5][j]
 
         # skip nechtenych joints
-        if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Spine' in joints[i]) or ('Hips' in joints[i]):
+        if any(char.isdigit() for char in joints[i]) or ('Head' in joints[i]) or ('Shoulder' in joints[i]) or ('Hips' in joints[i]):
             continue
-        # 1. prvek výstupu = distance, 2. = path
-        dtwx = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtwy = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtwz = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
-        dtw_dist[joints[i]] = dtwx+dtwy+dtwz
 
-        if ('RightShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
-            RightShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
-        if ('LeftShoulder' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
-            LeftShoulder = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
+        dtwx = dtw.distance_fast(seq1x,seq2x,use_pruning=True)
+        dtwy = dtw.distance_fast(seq1y,seq2y,use_pruning=True)
+        dtwz = dtw.distance_fast(seq1z,seq2z,use_pruning=True)
+        dtw_dist[joints[i]] = [dtwx,dtwy,dtwz]
+
+        if ('Spine' in joints[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+            Spine = np.array([seq1x,seq1y,seq1z,seq2x,seq2y,seq2z],dtype=object)
 
     return dtw_dist
 
@@ -239,10 +234,6 @@ def compare_all(path_bvh, path_trajectory, path_jointlist, path_converted):
     Returns:
         [list]: A list of dictionaries with results of dtw for each chosen joint
     """
-    import numpy as np
-    import os
-    import pickle as pk
-    from timeit import default_timer as timer
 
     DTW_DICT_MATRIX = {
         'RightHand': None,
@@ -269,12 +260,12 @@ def compare_all(path_bvh, path_trajectory, path_jointlist, path_converted):
         for i in range(words_tmp[v]):
             words_all.append(v) #seznam testovanych slov za sebou
 
-    DTW_MATRIX1 = np.zeros(shape=(end_size_rows, 1000))
-    DTW_MATRIX2 = np.zeros(shape=(end_size_rows, 1000))
-    DTW_MATRIX3 = np.zeros(shape=(end_size_rows, 1000))
-    DTW_MATRIX4 = np.zeros(shape=(end_size_rows, 1000))
-    DTW_MATRIX5 = np.zeros(shape=(end_size_rows, 1000))
-    DTW_MATRIX6 = np.zeros(shape=(end_size_rows, 1000))
+    DTW_MATRIX1 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
+    DTW_MATRIX2 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
+    DTW_MATRIX3 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
+    DTW_MATRIX4 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
+    DTW_MATRIX5 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
+    DTW_MATRIX6 = np.zeros(shape=(end_size_rows, 1000), dtype=object)
     POSITION = np.zeros(shape=(1000), dtype=object)
 
     idx1 = 0
@@ -345,20 +336,17 @@ def import_abs_data(filepath, path_converted):
     Returns:
         [dictionary, list]: Dictionary of anotated words corresponding to returned list (trajectory)
     """
-    import numpy as np
-    import pickle as pkl
-    import os
 
     filename = os.path.splitext(filepath)[0]
 
     dict_file = os.path.join(path_converted, 'dictionary_'+filename+'.pickle')
     pkl_dict = open(dict_file, "rb")
-    dictionary = pkl.load(pkl_dict)
+    dictionary = pk.load(pkl_dict)
     pkl_dict.close()
 
     traj_file = os.path.join(path_converted, 'trajectory_'+filename+'.pickle')
     pkl_traj = open(traj_file, "rb")
-    trajectory = pkl.load(pkl_traj)
+    trajectory = pk.load(pkl_traj)
     pkl_traj.close()
 
     return dictionary, trajectory

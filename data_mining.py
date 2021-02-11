@@ -96,11 +96,12 @@ def words_preparation(word1, word2, path_jointlist):
         # skip nechtenych joints
         if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
             continue
-        
-        data_prepared[jointlist[i]] = [seq1,seq2]
 
         if ('Spine' in jointlist[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
             Spine = np.array([seq1[0],seq1[1],seq1[2],seq2[0],seq2[1],seq2[2]],dtype=object)
+            continue
+
+        data_prepared[jointlist[i]] = [seq1,seq2]
 
     return data_prepared
 
@@ -160,6 +161,7 @@ if __name__ == '__main__':
     if mine:
         mine_data(bvh_dir, glo_dir)
 
+
     # creates sign numpy dictionary
     create = False
     if create:
@@ -173,8 +175,6 @@ if __name__ == '__main__':
         meta = pk.load(pf)              # metadata: nazev, puvod data (soubor), anotace
     with open(path_trajectory, 'rb') as pf:
         traj = pk.load(pf)              # trajektorie [item, frame, joint, channel]
-
-
 
 
     flexing = False
@@ -210,6 +210,7 @@ if __name__ == '__main__':
 
         unique_count.sort(key=lambda x: x[1], reverse=True)
         print((unique_count))
+
 
     computing = True
     if computing:

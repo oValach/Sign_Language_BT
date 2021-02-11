@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pickle as pk
 import matplotlib.pyplot as plt
+from dtaidistance import dtw
 
 
 def mine_data(in_directory, out_directory):
@@ -46,9 +47,95 @@ def create_trajectory_matrix(dictionary_data):
     with open(path_trajectory, 'wb') as pf:
         pk.dump(trajectory_list, pf)
 
-def distance_computation(word1, word2):
-    computed_distance = np.size(word1, 0) - np.size(word2, 0)         # tohle je samozřejmě blbost, ale aby to něco vracelo
-    return abs(computed_distance)
+def words_preparation(word1, word2, path_jointlist):
+    """Counts dtw with euclidean distance between given word trajectory coordinate signals
+    Args:
+        word1 (list): First trajectory to count in dtw fcn
+        word2 (list): Second trajectory to count in dtw fcn
+        path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
+
+    Returns:
+        [list]: A list of counted dtw values for each joint separately
+    """
+
+    jointlist = get_jointlist(path_jointlist)
+    data_prepared = {}
+
+    # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla
+    for i in range(len(jointlist)):  # joint
+        seq1 = np.zeros(shape=(3,len(word1)),dtype=np.double)
+        seq2 = np.zeros(shape=(3,len(word2)),dtype=np.double)
+
+        for j in range(len(word1)):  # pocet snimku prvniho slova
+            # skip nechtenych joints
+            if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
+                break
+            if ('Spine' in jointlist[i]):
+                seq1[0][j] = word1[j][i][0]
+                seq1[1][j] = word1[j][i][1]  # souradnice prvniho slova za podminky ramene
+                seq1[2][j] = word1[j][i][2]
+            else:
+                seq1[0][j] = word1[j][i][0] - Spine[0][j]
+                seq1[1][j] = word1[j][i][1] - Spine[1][j]  # souradnice prvniho slova s odectenim souradnic ramen
+                seq1[2][j] = word1[j][i][2] - Spine[2][j]
+
+
+        for j in range(len(word2)):  # pocet snimku druheho slova
+            # skip nechtenych joints
+            if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
+                break
+            if ('Spine' in jointlist[i]):
+                seq2[0][j] = word2[j][i][0]
+                seq2[1][j] = word2[j][i][1]  # souradnice druheho slova za podminky ramene
+                seq2[2][j] = word2[j][i][2]
+            else:
+                seq2[0][j] = word2[j][i][0] - Spine[3][j]
+                seq2[1][j] = word2[j][i][1] - Spine[4][j]  # souradnice druheho slova s odectenim souradnic ramen
+                seq2[2][j] = word2[j][i][2] - Spine[5][j]
+
+        # skip nechtenych joints
+        if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
+            continue
+        
+        data_prepared[jointlist[i]] = [seq1,seq2]
+
+        if ('Spine' in jointlist[i]): # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+            Spine = np.array([seq1[0],seq1[1],seq1[2],seq2[0],seq2[1],seq2[2]],dtype=object)
+
+    return data_prepared
+
+
+def distance_computation_dtw(data_prepared):
+    
+    xdist = list()
+    ydist = list()
+    zdist = list()
+
+    for key, val in data_prepared.items():
+
+        dtwx = dtw.distance_fast(val[0][0],val[1][0],use_pruning=True)
+        dtwy = dtw.distance_fast(val[0][1],val[1][1],use_pruning=True)
+        dtwz = dtw.distance_fast(val[0][2],val[1][2],use_pruning=True)
+
+        xdist.append(dtwx)
+        ydist.append(dtwy)
+        zdist.append(dtwz)
+
+    xavg = np.mean(xdist)
+    yavg = np.mean(ydist)
+    zavg = np.mean(zdist)
+
+    output = xavg+yavg+zavg # samozrejme docasne reseni, secteni dtw vzdalenosti pro x,y a z pres joints
+
+    return output
+
+
+def get_jointlist(path_jointlist):
+    file_joints = open(path_jointlist, 'r')
+    joints = file_joints.readlines()
+    joints = [f.rstrip() for f in joints]
+    return joints
+
 
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
@@ -132,7 +219,8 @@ if __name__ == '__main__':
                 if i == j:
                     distance[i, j] = 0
                 else:
-                    distance[i, j] = distance[j, i] = (distance_computation(traj[i], traj[j]))
+                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
+                    distance[i, j] = distance[j, i] = (distance_computation_dtw(words_prepared))
 
         print(np.shape(distance))
         plt.imshow(distance, cmap='hot', interpolation='nearest')
@@ -143,7 +231,7 @@ if __name__ == '__main__':
         for i in range(np.size(distance, 0)):
             tmp_slice = distance[i, :]   # vyberu jednu rádku confussion matice a najdu top několik nejlepších shod
             best10 = (tmp_slice.argsort()[:10][::-1])
-            print('Nejlepší tři shody: '.format(best10))
+            print('Nejlepší tři shody: {}'.format(best10))
             print('vybráno: {}'.format(meta[i]))
             for b in best10:
                 print(b)

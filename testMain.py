@@ -39,7 +39,7 @@ if __name__ == "__main__":
         traj = []
 
         file_joints = open(path_jointlist, 'r')
-        joints = file_joints.readlines()
+        joints = file_joints.readlines()f
         joints = [f.rstrip() for f in joints]
 
         words = count_words(1,False,path_bvh, path_converted)

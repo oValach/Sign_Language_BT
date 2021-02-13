@@ -6,7 +6,6 @@ data_bvh/
 data_converted/
 data_trajectory/
 test.py
-dtw_tests.py
 prepis.py
 bvh_actual/
 source_data/

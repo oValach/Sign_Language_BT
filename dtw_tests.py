@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
 from dtw import dtw as dtw_slower
+from dtw_c import dtw_c as dtw_c
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
 from datetime import datetime
@@ -67,9 +68,9 @@ if __name__ == "__main__":
         b = np.ones((3, delka),dtype=np.double)
 
         start = timer()
-        dist = dtw_ndim.distance_fast(a,b) #python dtaidistance
-        #dist = dtw_slower(a,b, dist=euclidean) #python dtw
-        #dist  = fastdtw(a,b,dist=euclidean) #python fastdtw
+        #dist = dtw_ndim.distance_fast(a,b)  #python dtaidistance
+        dist = dtw_slower(a,b, dist=euclidean)[0]     #python dtw
+        #dist  = fastdtw(a,b,dist=euclidean)[0]    #python fastdtw
         end = timer()
 
         print('{}, čas: {}'.format(dist, end-start))

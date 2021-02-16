@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pickle as pk
 import matplotlib.pyplot as plt
+from scipy import signal
 from dtaidistance import dtw
 
 
@@ -172,6 +173,48 @@ def compute_one_word(word, path_jointlist, number_of_mins):
     
     return best
 
+def resample_to_longer_fourier(word1,word2):
+    joint_list = get_jointlist(path_jointlist)
+    word1_hips = traj[0][:, 0, :]
+
+    if len(word1) <= len(word2):
+        longer_word = word2
+        shorter_word = word1
+    else:
+        longer_word = word1
+        shorter_word = word2
+
+    word_new_temp = signal.resample(shorter_word, len(longer_word)+1)
+    word_new = word_new_temp[:-1]
+
+    word_newx = [frame[0] for frame in word_new]
+    word_newy = [frame[1] for frame in word_new]
+    word_newz = [frame[2] for frame in word_new]
+
+    word_x = [frame[0] for frame in shorter_word]
+    word_y = [frame[1] for frame in shorter_word]
+    word_z = [frame[2] for frame in shorter_word]
+
+    word_xx = [frame[0] for frame in longer_word]
+    word_yy = [frame[1] for frame in longer_word]
+    word_zz = [frame[2] for frame in longer_word]
+
+    ax = plt.axes(projection='3d')
+    ax.plot3D(word_newx, word_newy, word_newz, 'red')
+    ax.plot3D(word_x, word_y, word_z, 'black')
+    ax.plot3D(word_xx, word_yy, word_zz, 'blue')
+    ax.plot3D(word_x[0], word_y[0], word_z[0], 'k*')
+    #ax.plot3D(word1_hips[0][0], word1_hips[0][1], word1_hips[0][2], 'go')
+    plt.legend([ 'resampled data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
+    plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
+    #plt.gca().invert_zaxis()
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.show()
+
+    return word_new
+
+
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
     source_dir = 'Sign_Language_BP/'
@@ -274,7 +317,18 @@ if __name__ == '__main__':
                 print(meta[b])
             break
 
-    computing_one_word = True
+    computing_one_word = False
     if computing_one_word:
-        word = 'bude'
-        compute_one_word(word, path_jointlist,20)
+        word = 'během'
+        compute_one_word(word, path_jointlist, 20)
+
+    resample_longer = True
+    if resample_longer:
+        joint = 5
+        word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro 3. joint, vsechny dimenze
+        word1_meta = meta[0]
+
+        word2 = traj[110][:, joint, :] 
+        word2_meta = meta[110]
+
+        word2_resampled = resample_to_longer_fourier(word1,word2)

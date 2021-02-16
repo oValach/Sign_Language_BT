@@ -107,8 +107,7 @@ def words_preparation(word1, word2, path_jointlist):
 
         # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
         if ('Spine' in jointlist[i]):
-            Spine = np.array([seq1[0], seq1[1], seq1[2],
-                              seq2[0], seq2[1], seq2[2]], dtype=object)
+            Spine = np.array([seq1[0], seq1[1], seq1[2],seq2[0], seq2[1], seq2[2]], dtype=object)
             continue
 
         data_prepared[jointlist[i]] = [seq1, seq2]
@@ -148,8 +147,9 @@ def get_jointlist(path_jointlist):
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     return joints
-
-def compute_one_word(word, path_jointlist):
+    
+    
+def compute_one_word(word, path_jointlist, number_of_mins):
 
     sign_name_list = [m[2] for m in meta]
     try:
@@ -164,31 +164,31 @@ def compute_one_word(word, path_jointlist):
         words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
         distance[i] = (distance_computation_dtw(words_prepared))
 
-    best10 = (distance.argsort()[:10][::-1])
+    best = (distance.argsort()[:number_of_mins][::-1])
 
-    print('Nejlepších 10 shod se slovem: {}'.format(word))
-    for item in best10[::-1]:
+    print('Nejlepších {} shod se slovem: {}'.format(number_of_mins,word))
+    for item in best[::-1]:
         print('{}: {}'.format(meta[item], distance[item]))
     
-    return
+    return best
 
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
-    #source_dir = 'Sign_Language_BP/'
+    source_dir = 'Sign_Language_BP/'
     # bvh_dir = os.path.join(source_dir, 'bvh/')  # all bvh files takes and dictionaries
-    bvh_dir = 'data_bvh/'
+    bvh_dir = 'Sign_Language_BP/data_bvh/'
     #glo_dir = 'source_data/'
-    glo_dir = 'source_data/'
+    glo_dir = 'Sign_Language_BP/source_data/'
     #word_dir = 'source_words/'
-    word_dir = 'source_words/'
+    word_dir = 'Sign_Language_BP/source_words/'
     #path_jointlist = 'data/joint_list.txt'
-    path_jointlist = 'data/joint_list.txt'
+    path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
     #path_metadata = 'data/meta.pkl'
-    path_metadata = 'data/meta.pkl'
+    path_metadata = 'Sign_Language_BP/data/meta.pkl'
     #path_trajectory = 'data/traj.pkl'
-    path_trajectory ='data/traj.pkl'
+    path_trajectory ='Sign_Language_BP/data/traj.pkl'
     #dict_file = os.path.join(source_dir, 'ultimate_dictionary2.txt')
-    dict_file = 'data/ultimate_dictionary2.txt'
+    dict_file = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
@@ -277,4 +277,4 @@ if __name__ == '__main__':
     computing_one_word = True
     if computing_one_word:
         word = 'bude'
-        compute_one_word(word, path_jointlist)
+        compute_one_word(word, path_jointlist,20)

@@ -10,5 +10,6 @@ prepis.py
 bvh_actual/
 source_data/
 source_words/
+bvh_dict/
 data/meta.pkl
 data/traj.pkl

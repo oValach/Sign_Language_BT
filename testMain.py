@@ -15,7 +15,7 @@ if __name__ == "__main__":
     path_converted = 'Sign_Language_BP/data_converted'
     glo_dir = 'Sign_Language_BP/source_data/'
 
-    dtw_computing = True
+    dtw_computing = False
     if dtw_computing:
         times = timer()
         DTW = compare_all(path_bvh,path_datatrajectory,path_jointlist, path_converted)
@@ -33,19 +33,19 @@ if __name__ == "__main__":
         for key, val in dtw_out[0].items():
             print('')
   
-    meta_traj_export = False
+    meta_traj_export = True
     if meta_traj_export:
         meta = []
         traj = []
 
         file_joints = open(path_jointlist, 'r')
-        joints = file_joints.readlines()f
+        joints = file_joints.readlines()
         joints = [f.rstrip() for f in joints]
 
         words = count_words(1,False,path_bvh, path_converted)
 
         for key, val in words.items():
-            find_word(key, -1, path_bvh, path_converted)
+            find_word(key, -1, path_bvh, path_converted, meta, traj)
 
         pk_out = open("Sign_Language_BP/data/meta.pkl", 'wb')
         pk.dump(meta, pk_out)

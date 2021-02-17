@@ -23,7 +23,7 @@ def get_trajectory(trajectory, start, end):
     return word_trajectory
 
 
-def find_word(word, amount, path_bvh, path_converted):
+def find_word(word, amount, path_bvh, path_converted, meta, traj):
     """Finds first [amount] of occurences of word across all files
 
     Args:
@@ -64,13 +64,13 @@ def find_word(word, amount, path_bvh, path_converted):
                 # pokud byl nalezen hledany znak
                 if tmp_key == 'sign_id' and val[tmp_key] == word and (amount != 1):
 
-                    #meta.append([val['sign_name'],filepath,val[tmp_key]])
+                    meta.append([val[tmp_key],filepath,val['annotation_Filip_bvh_frame']])
 
                     current_amount += 1
                     start = val['annotation_Filip_bvh_frame'][0]
                     end = val['annotation_Filip_bvh_frame'][1]
 
-                    #traj.append(get_trajectory(trajectory, start, end))
+                    traj.append(get_trajectory(trajectory, start, end))
 
                     # fce jejiz vysledek ulozi do spolecneho pole trajektorii, nazev souboru a start a end snimek
                     word_trajectory.append([get_trajectory(trajectory, start, end), filepath, start, end, ])

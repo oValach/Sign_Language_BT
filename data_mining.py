@@ -40,10 +40,8 @@ def create_trajectory_matrix(dictionary_data):
                 npy_name = npy_name.replace('_a_', '_')
 
             # tmp_trajectory = np.load(os.path.join(glo_dir, os.path.splitext(item['src_mocap'])[0] + '.npy'))
-            tmp_trajectory = np.load(os.path.join(glo_dir, npy_name))[
-                anot[0]:anot[1], :, :]
-            metadata_list.append(
-                [item['sign_id'], item['src_mocap'], item['annotation_Filip_bvh_frame']])
+            tmp_trajectory = np.load(os.path.join(glo_dir, npy_name))[anot[0]:anot[1], :, :]
+            metadata_list.append([item['sign_id'], item['src_mocap'], item['annotation_Filip_bvh_frame']])
             trajectory_list.append(tmp_trajectory)
             print('{:.2f} %'.format(float(i) / len(dictionary_data) * 100))
 
@@ -152,7 +150,7 @@ def get_jointlist(path_jointlist):
     
 def compute_one_word(word, path_jointlist, number_of_mins):
 
-    sign_name_list = [m[2] for m in meta]
+    sign_name_list = [m[0] for m in meta]
     try:
         idx = sign_name_list.index(word)
     except:
@@ -172,6 +170,7 @@ def compute_one_word(word, path_jointlist, number_of_mins):
         print('{}: {}'.format(meta[item], distance[item]))
     
     return best
+
 
 def resample_to_longer_fourier(word1,word2):
     joint_list = get_jointlist(path_jointlist)
@@ -220,6 +219,7 @@ if __name__ == '__main__':
     source_dir = 'Sign_Language_BP/'
     # bvh_dir = os.path.join(source_dir, 'bvh/')  # all bvh files takes and dictionaries
     bvh_dir = 'Sign_Language_BP/data_bvh/'
+    bvh_dict = 'Sign_Language_BP/bvh_dict/'
     #glo_dir = 'source_data/'
     glo_dir = 'Sign_Language_BP/source_data/'
     #word_dir = 'source_words/'
@@ -248,11 +248,9 @@ if __name__ == '__main__':
     with open(path_jointlist, 'r') as f:
         joint_list = f.readlines()      # to je jenom pořadí markerů
     with open(path_metadata, 'rb') as pf:
-        # metadata: nazev, puvod data (soubor), anotace
-        meta = pk.load(pf)
+        meta = pk.load(pf)              # metadata: nazev, puvod data (soubor), anotace
     with open(path_trajectory, 'rb') as pf:
-        # trajektorie [item, frame, joint, channel]
-        traj = pk.load(pf)
+        traj = pk.load(pf)              # trajektorie [item, frame, joint, channel]
 
     flexing = False
     if flexing:  # access to data examples
@@ -328,7 +326,7 @@ if __name__ == '__main__':
         word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro 3. joint, vsechny dimenze
         word1_meta = meta[0]
 
-        word2 = traj[110][:, joint, :] 
+        word2 = traj[110][:, joint, :]
         word2_meta = meta[110]
 
         word2_resampled = resample_to_longer_fourier(word1,word2)

@@ -6,6 +6,8 @@ import pickle as pk
 import matplotlib.pyplot as plt
 from scipy import signal, interpolate
 from dtaidistance import dtw
+from dtaidistance import dtw_ndim
+from dtw import dtw as dtw_slower
 
 
 def mine_data(in_directory, out_directory):
@@ -33,7 +35,7 @@ def create_trajectory_matrix(dictionary_data):
 
     for i, item in enumerate(dictionary_data):
         # vyřazuje položky ve slovníku, které nejsou zpracovane
-        if all(['annotation_Filip_bvh_frame' in item.keys(), item['sign_id'] is not '', '!' not in item['sign_id']]):
+        if all(['annotation_Filip_bvh_frame' in item.keys(), item['sign_id'] != '', '!' not in item['sign_id']]):
             anot = item['annotation_Filip_bvh_frame']
             npy_name = (os.path.splitext(item['src_mocap'])[0] + '.npy')
             if 'predlozky' in npy_name:  # bastl ! oprava rozdilneho nazvu souboru "predlozky_a_spojky" -> "predlozky_spojky"
@@ -59,7 +61,7 @@ def words_preparation(word1, word2, path_jointlist):
         path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
 
     Returns:
-        [list]: A list of counted dtw values for each joint separately
+        [list]: A list of frames values for each joint separately
     """
 
     jointlist = get_jointlist(path_jointlist)
@@ -117,28 +119,13 @@ def words_preparation(word1, word2, path_jointlist):
 # VICEDIM VERZE DTW, zkusit na testovacich slovech, jinem dtw algoritmus
 def distance_computation_dtw(data_prepared):
 
-    xdist = list()
-    ydist = list()
-    zdist = list()
+    dtw_dist = list()
 
     for key, val in data_prepared.items():
 
-        dtwx = dtw.distance_fast(val[0][0], val[1][0], use_pruning=True)
-        dtwy = dtw.distance_fast(val[0][1], val[1][1], use_pruning=True)
-        dtwz = dtw.distance_fast(val[0][2], val[1][2], use_pruning=True)
+        dtw_dist.append(dtw_ndim.distance_fast(np.transpose(val[0]),np.transpose(val[1])))
 
-        xdist.append(dtwx)
-        ydist.append(dtwy)
-        zdist.append(dtwz)
-
-    xavg = np.mean(xdist)
-    yavg = np.mean(ydist)
-    zavg = np.mean(zdist)
-
-    # samozrejme docasne reseni, secteni dtw vzdalenosti pro x,y a z pres joints
-    output = np.mean([xavg,yavg,zavg])
-
-    return output
+    return np.mean(dtw_dist)
 
 
 def get_jointlist(path_jointlist):
@@ -147,8 +134,8 @@ def get_jointlist(path_jointlist):
     joints = [f.rstrip() for f in joints]
     return joints
     
-    
-def compute_one_word(word, path_jointlist, number_of_mins):
+
+def compute_one_word(word, path_jointlist, number_of_mins,graph = 1):
 
     sign_name_list = [m[0] for m in meta]
     try:
@@ -156,20 +143,49 @@ def compute_one_word(word, path_jointlist, number_of_mins):
     except:
         print('Slovo nenalezeno.')
         sys.exit()
-    word_traj = traj[idx]
+
+    occurences = sign_name_list.count(word)
+
+    print('{} vyskytu slova {}'.format(occurences, word))
+    word_index = input('Index instance slova na testovani (0,{}): '.format(occurences-1))
+    word_traj = traj[idx+int(word_index)]
 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
         words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
         distance[i] = (distance_computation_dtw(words_prepared))
 
-    best = (distance.argsort()[:number_of_mins][::-1])
+    sorted_distances = (distance.argsort())
+    sorted_words = [meta[item][0] for item in sorted_distances]
+    bestentered = sorted_distances[:number_of_mins-1]
 
-    print('Nejlepších {} shod se slovem: {}'.format(number_of_mins,word))
-    for item in best[::-1]:
+    best100_occurences = sorted_words[:99].count(word)
+    best500_occurences = sorted_words[:499].count(word)
+
+    if graph:
+        hist_data = [int(item == word) for item in sorted_words]
+        hist_data_plot = list()
+        idx1 = 0
+        idx2 = 36
+        while idx2<=len(hist_data):
+            hist_data_plot.append(hist_data[idx1:idx2].count(1))
+            idx1 += 36
+            idx2 += 36
+        plt.barh(np.arange(len(hist_data_plot)).tolist(),hist_data_plot)
+        plt.xlabel('Vyskytu znaku "{}" v oblasti'.format(word))
+        plt.ylabel('Seřazený dataset vzdáleností rozdělen do 37 oblastí')
+        plt.xticks(np.arange(0, max(hist_data_plot), 1))
+        plt.title('Rozložení identických znaků ke znaku "{}" v seřazeném datasetu'.format(word))
+        plt.grid()
+        plt.show()
+
+    print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(100,best100_occurences))
+    print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(500,best500_occurences))
+    print('Nejlepších {} shod s {}.instanci slova: {}'.format(number_of_mins,word_index,word))
+    for item in bestentered:
         print('{}: {}'.format(meta[item], distance[item]))
     
-    return best
+    return bestentered
 
 
 def resample_to_longer_fourier(word1,word2,graph = 0):
@@ -210,7 +226,7 @@ def resample_to_longer_fourier(word1,word2,graph = 0):
 
 def interpolate_signal(signal, final_length):
     x = np.r_[0:len(signal)-1:complex(len(signal),1)]
-    f = interpolate.interp1d(x,signal)
+    f = interpolate.interp1d(x,signal,kind='linear')
 
     to_interpolate = np.r_[0:len(signal)-1:complex(final_length,1)]
     signal_interpolated = f(to_interpolate)
@@ -252,7 +268,7 @@ def resample_to_longer_interpolation(word1,word2, graph = 0):
 
     return word_interpolated
 
-    
+
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
     source_dir = 'Sign_Language_BP/'
@@ -354,12 +370,12 @@ if __name__ == '__main__':
                 print(meta[b])
             break
 
-    computing_one_word = False
+    computing_one_word = True
     if computing_one_word:
-        word = 'během'
-        compute_one_word(word, path_jointlist, 20)
-
-    resample = True
+        word = 'zitra'
+        compute_one_word(word, path_jointlist, 20, graph=1)
+    
+    resample = False
     if resample:
         joint = 5
         word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
@@ -368,4 +384,4 @@ if __name__ == '__main__':
         word2 = traj[110][:, joint, :]
         word2_meta = meta[110]
 
-        word2_resampled = resample_to_longer_fourier(word1,word2,1)
+        word2_resampled = resample_to_longer_interpolation(word1,word2,1)

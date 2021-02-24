@@ -5,10 +5,9 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
+from dtw import dtw as dtw_slower
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
-from dtw import dtw as dtw_slower
-from dtw_c import dtw_c as dtw_c
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
 from datetime import datetime
@@ -28,20 +27,17 @@ if __name__ == "__main__":
 
     testnaslovech = False
     if testnaslovech:
+        meta=traj=[] #pouze pro spravny pruchod find_word
         word1 = 'bude'
         word2 = 'prset-neprset-prset'
-        [word1_traj, _, _, _] = BP_lib.find_word(word1, 1,path_bvh,path_converted)
-        [word2_traj, _, _, _] = BP_lib.find_word(word2, 1,path_bvh,path_converted)
+        [word1_traj, _, _, _] = BP_lib.find_word(word1, 1,path_bvh,path_converted,meta,traj)
+        [word2_traj, _, _, _] = BP_lib.find_word(word2, 1,path_bvh,path_converted,meta,traj)
 
-        #word = 'bude'
-        #words_found = BP_lib.find_word(word, 2)
-        #[word1_traj,_,_,_] = words_found[0]
-        #[word2_traj,_,_,_] = words_found[1]
         start_time = datetime.now()
         dtw_result = BP_lib.dtw_dist(word1_traj, word2_traj,path_jointlist)
         end_time = datetime.now()
 
-        print(str(alg_type) + ': ' + str(word1) + ' vs ' + str(word1))
+        print(str(str(word1) + ' vs ' + str(word1)))
         [print(str(k)+': '+str(v)) for k, v in dtw_result.items()]
         print('Duration: {}'.format(end_time - start_time))
 
@@ -51,11 +47,12 @@ if __name__ == "__main__":
         s2 = np.array(np.random.rand(3000), dtype=np.double)
 
         start = timer()
-        dtw_test2 = dtw.distance_fast(s1, s2, use_pruning=True)
-        #dtw_test2 = dtw.distance_fast(s1, s2, use_pruning=False)
+        #dist = fastdtw(s1, s2, dist=euclidean)[0]
+        #dist = dtw.distance_fast(s1, s2, use_pruning=False,only_ub=True)
+        dist = dtw_slower(s1,s2)
         end = timer()
 
-        print(dtw_test2)
+        print(dist)
         print(end-start)
 
     testnaumelychpolich_2D = True
@@ -65,12 +62,12 @@ if __name__ == "__main__":
         delka2 = np.random.randint(15, 40)
 
         a = np.zeros((3, delka),dtype=np.double)
-        b = np.ones((3, delka),dtype=np.double)
+        b = np.ones((3, delka2),dtype=np.double)
 
         start = timer()
-        #dist = dtw_ndim.distance_fast(a,b)  #python dtaidistance
-        dist = dtw_slower(a,b, dist=euclidean)[0]     #python dtw
-        #dist  = fastdtw(a,b,dist=euclidean)[0]    #python fastdtw
+        dist0 = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance
+        dist1 = dtw_slower(np.transpose(a),np.transpose(b)).distance    #python dtw
+        dist2  = fastdtw(np.transpose(a),np.transpose(b),dist=euclidean)[0]    #python fastdtw
         end = timer()
 
-        print('{}, čas: {}'.format(dist, end-start))
+        print('{}, čas: {}'.format(dist0, end-start))

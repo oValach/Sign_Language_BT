@@ -187,42 +187,63 @@ def compute_one_word(word, path_jointlist, number_of_mins,graph = 1):
     
     return bestentered
 
+def word_resample(word1,word2,method,graph = 0):
+    if method == 'fourier':
+        joint_list = get_jointlist(path_jointlist)
 
-def resample_to_longer_fourier(word1,word2,graph = 0):
-    joint_list = get_jointlist(path_jointlist)
+        word1_restruct = np.zeros(shape=(3),dtype = object)
+        word2_restruct = np.zeros(shape=(3),dtype = object)
+        word_resampled = np.zeros(shape=(3),dtype = object)
 
-    if len(word1) <= len(word2):
-        longer_word_temp = word2
-        shorter_word_temp = word1
-    else:
-        longer_word_temp = word1
-        shorter_word_temp = word2
+        for i in range(3):
+            word1_restruct[i] = [frame[i] for frame in word1]
+            word2_restruct[i] = [frame[i] for frame in word2]
+        for i in range(3):
+            word_resampled[i] = signal.resample(word2_restruct[i], len(word1_restruct[i])+1)
+            word_resampled[i] = word_resampled[i][:-1]
+        
+        if graph:
+            ax = plt.axes(projection='3d')
+            ax.plot3D(word_resampled[0],word_resampled[1],word_resampled[2], 'r.')
+            ax.plot3D(word2_restruct[0],word2_restruct[1],word2_restruct[2], 'black')
+            ax.plot3D(word1_restruct[0],word1_restruct[1],word1_restruct[2], 'blue')
+            ax.plot3D(word2_restruct[0][0], word2_restruct[1][0], word2_restruct[2][0], 'k*')
+            plt.legend(['resampled data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
+            plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.show()
 
-    shorter_word = np.zeros(shape=(3),dtype = object)
-    longer_word = np.zeros(shape=(3),dtype = object)
-    word_resampled = np.zeros(shape=(3),dtype = object)
+        return word_resampled
 
-    for i in range(3):
-        shorter_word[i] = [frame[i] for frame in shorter_word_temp]
-        longer_word[i] = [frame[i] for frame in longer_word_temp]
-    for i in range(3):
-        word_resampled[i] = signal.resample(shorter_word[i], len(longer_word[i])+1)
-        word_resampled[i] = word_resampled[i][:-1]
-    
-    if graph:
-        ax = plt.axes(projection='3d')
-        ax.plot3D(word_resampled[0],word_resampled[1],word_resampled[2], 'r.')
-        ax.plot3D(shorter_word[0],shorter_word[1],shorter_word[2], 'black')
-        ax.plot3D(longer_word[0],longer_word[1],longer_word[2], 'blue')
-        ax.plot3D(shorter_word[0][0], shorter_word[1][0], shorter_word[2][0], 'k*')
-        plt.legend([ 'resampled data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
-        plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.show()
+    if method == 'interpolation':
+        joint_list = get_jointlist(path_jointlist)
 
-    return word_resampled
+        word1_restruct = np.zeros(shape=(3),dtype = object)
+        word2_restruct = np.zeros(shape=(3),dtype = object)
+        word_interpolated = np.zeros(shape=(3),dtype = object)
 
+        for i in range(3):
+            word1_restruct[i] = [frame[i] for frame in word1]
+            word2_restruct[i] = [frame[i] for frame in word2]
+
+        for i in range(3):
+            word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]))
+
+        if graph:
+            ax = plt.axes(projection='3d')
+            ax.plot3D(word_interpolated[0],word_interpolated[1],word_interpolated[2], 'r.')
+            ax.plot3D(word2_restruct[0],word2_restruct[1],word2_restruct[2], 'black')
+            ax.plot3D(word1_restruct[0],word1_restruct[1],word1_restruct[2], 'blue')
+            ax.plot3D(word2_restruct[0][0], word2_restruct[1][0], word2_restruct[2][0], 'k*')
+            plt.legend(['interpolated data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
+            plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.show()
+
+        return word_interpolated
+        
 
 def interpolate_signal(signal, final_length):
     x = np.r_[0:len(signal)-1:complex(len(signal),1)]
@@ -231,42 +252,6 @@ def interpolate_signal(signal, final_length):
     to_interpolate = np.r_[0:len(signal)-1:complex(final_length,1)]
     signal_interpolated = f(to_interpolate)
     return signal_interpolated
-
-
-def resample_to_longer_interpolation(word1,word2, graph = 0):
-    joint_list = get_jointlist(path_jointlist)
-
-    if len(word1) <= len(word2):
-        longer_word_temp = word2
-        shorter_word_temp = word1
-    else:
-        longer_word_temp = word1
-        shorter_word_temp = word2
-
-    shorter_word = np.zeros(shape=(3),dtype = object)
-    longer_word = np.zeros(shape=(3),dtype = object)
-    word_interpolated = np.zeros(shape=(3),dtype = object)
-
-    for i in range(3):
-        shorter_word[i] = [frame[i] for frame in shorter_word_temp]
-        longer_word[i] = [frame[i] for frame in longer_word_temp]
-
-    for i in range(3):
-        word_interpolated[i] = interpolate_signal(shorter_word[i],len(longer_word[i]))
-
-    if graph:
-        ax = plt.axes(projection='3d')
-        ax.plot3D(word_interpolated[0],word_interpolated[1],word_interpolated[2], 'r.')
-        ax.plot3D(shorter_word[0],shorter_word[1],shorter_word[2], 'black')
-        ax.plot3D(longer_word[0],longer_word[1],longer_word[2], 'blue')
-        ax.plot3D(shorter_word[0][0], shorter_word[1][0], shorter_word[2][0], 'k*')
-        plt.legend(['interpolated data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
-        plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.show()
-
-    return word_interpolated
 
 
 if __name__ == '__main__':
@@ -370,12 +355,12 @@ if __name__ == '__main__':
                 print(meta[b])
             break
 
-    computing_one_word = True
+    computing_one_word = False
     if computing_one_word:
         word = 'zitra'
         compute_one_word(word, path_jointlist, 20, graph=1)
     
-    resample = False
+    resample = True
     if resample:
         joint = 5
         word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
@@ -384,4 +369,4 @@ if __name__ == '__main__':
         word2 = traj[110][:, joint, :]
         word2_meta = meta[110]
 
-        word2_resampled = resample_to_longer_interpolation(word1,word2,1)
+        word2_resampled = word_resample(word2,word1,'interpolation',graph=1)

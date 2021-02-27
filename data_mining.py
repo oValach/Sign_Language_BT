@@ -187,6 +187,7 @@ def compute_one_word(word, path_jointlist, number_of_mins,graph = 1):
     
     return bestentered
 
+
 def word_resample(word1,word2,method,graph = 0):
     if method == 'fourier':
         joint_list = get_jointlist(path_jointlist)
@@ -203,6 +204,34 @@ def word_resample(word1,word2,method,graph = 0):
             word_resampled[i] = word_resampled[i][:-1]
         
         if graph:
+            """
+            #3 different figures
+            channels = ['x','y','z']
+            for i in range(3):
+                plt.figure()
+                plt.plot(word2_restruct[i],'g')
+                plt.plot(word_resampled[i],'r')
+                plt.title('Interpolace kanálu {} trajektorie kloubu {} ve slově "{}" '.format(channels[i],joint_list[joint],word1_meta[0]))
+                plt.legend(['Initial data signal','Interpolated data signal'], loc='best')
+                plt.xlabel('X')
+                plt.ylabel('Y')
+                plt.show()
+            """
+            fig, ax = plt.subplots(3,1, sharex=True)
+            ax[0].plot(word2_restruct[0],'g')
+            ax[0].plot(word_resampled[0],'r')
+            ax[0].set_title('Resampled X axis')
+            ax[1].plot(word2_restruct[1],'g')
+            ax[1].plot(word_resampled[1],'r')
+            ax[1].set_title('Resampled Y axis')
+            ax[2].plot(word2_restruct[2],'g')
+            ax[2].plot(word_resampled[2],'r')
+            ax[2].set_title('Resampled Z axis')
+            fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
+            plt.suptitle('Fourier resample of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
+            plt.show()
+            """
+            #3D graph
             ax = plt.axes(projection='3d')
             ax.plot3D(word_resampled[0],word_resampled[1],word_resampled[2], 'r.')
             ax.plot3D(word2_restruct[0],word2_restruct[1],word2_restruct[2], 'black')
@@ -213,7 +242,7 @@ def word_resample(word1,word2,method,graph = 0):
             plt.xlabel('X')
             plt.ylabel('Y')
             plt.show()
-
+            """
         return word_resampled
 
     if method == 'interpolation':
@@ -231,16 +260,45 @@ def word_resample(word1,word2,method,graph = 0):
             word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]))
 
         if graph:
+            """
+            #3 different figures
+            channels = ['x','y','z']
+            for i in range(3):
+                plt.figure()
+                plt.plot(word2_restruct[i],'g')
+                plt.plot(word_interpolated[i],'r')
+                plt.title('Interpolace kanálu {} trajektorie kloubu {} ve slově "{}" '.format(channels[i],joint_list[joint],word1_meta[0]))
+                plt.legend(['Initial data signal','Interpolated data signal'], loc='best')
+                plt.xlabel('X')
+                plt.ylabel('Y')
+                plt.show()
+            """
+            fig, ax = plt.subplots(3,1, sharex=True)
+            ax[0].plot(word2_restruct[0],'g')
+            ax[0].plot(word_interpolated[0],'r')
+            ax[0].set_title('Interpolated X axis')
+            ax[1].plot(word2_restruct[1],'g')
+            ax[1].plot(word_interpolated[1],'r')
+            ax[1].set_title('Interpolated Y axis')
+            ax[2].plot(word2_restruct[2],'g')
+            ax[2].plot(word_interpolated[2],'r')
+            ax[2].set_title('Interpolated Z axis')
+            fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
+            plt.suptitle('Interpolation of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
+            plt.show()
+            """
+            #3D graph
             ax = plt.axes(projection='3d')
             ax.plot3D(word_interpolated[0],word_interpolated[1],word_interpolated[2], 'r.')
             ax.plot3D(word2_restruct[0],word2_restruct[1],word2_restruct[2], 'black')
             ax.plot3D(word1_restruct[0],word1_restruct[1],word1_restruct[2], 'blue')
             ax.plot3D(word2_restruct[0][0], word2_restruct[1][0], word2_restruct[2][0], 'k*')
             plt.legend(['interpolated data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
-            plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
+            plt.title('Trajektorie kloubu {} ve slově "{}" '.format(joint_list[joint],word1_meta[0]))
             plt.xlabel('X')
             plt.ylabel('Y')
             plt.show()
+            """
 
         return word_interpolated
         
@@ -326,7 +384,7 @@ if __name__ == '__main__':
         unique_count.sort(key=lambda x: x[1], reverse=True)
         print((unique_count))
 
-    computing = False
+    computing = True
     if computing:
         distance = np.zeros((len(traj), len(traj)))
         for i in range(len(traj)):
@@ -360,7 +418,7 @@ if __name__ == '__main__':
         word = 'zitra'
         compute_one_word(word, path_jointlist, 20, graph=1)
     
-    resample = True
+    resample = False
     if resample:
         joint = 5
         word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze

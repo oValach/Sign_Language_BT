@@ -372,6 +372,15 @@ def compare(word1,word2,dist = 'euclidean'):
         for i in range(3):
             corr[i] = spatial.distance.correlation(word1[i], word2[i])
         return corr
+    elif dist == 'canberra':
+        for i in range(3):
+            distance += spatial.distance.canberra(word1[i], word2[i])
+    elif dist == 'braycurtis':
+        for i in range(3):
+            distance += spatial.distance.braycurtis(word1[i], word2[i])
+    elif dist == 'chebyshev':
+        for i in range(3):
+            distance += spatial.distance.chebyshev(word1[i], word2[i])
 
     return distance
 

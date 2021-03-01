@@ -6,7 +6,7 @@ import numpy as np
 import pickle as pk
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import signal, interpolate
+from scipy import signal, interpolate, spatial
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
 from dtw import dtw as dtw_slower
@@ -137,7 +137,7 @@ def get_jointlist(path_jointlist):
     return joints
     
 
-def compute_one_word(word, path_jointlist, number_of_mins,graph = 1):
+def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
 
     sign_name_list = [m[0] for m in meta]
     try:
@@ -190,7 +190,7 @@ def compute_one_word(word, path_jointlist, number_of_mins,graph = 1):
     return bestentered
 
 
-def compare_words(word_amount, graph = 0):
+def compute_dtw(word_amount, graph = 0):
 
     if word_amount == -1:
         distance = np.zeros((len(traj), len(traj)))
@@ -214,6 +214,7 @@ def compare_words(word_amount, graph = 0):
         plt.show()
 
     return distance
+
 
 def word_resample(word1,word2,method,graph = 0):
     if method == 'fourier':
@@ -272,7 +273,7 @@ def word_resample(word1,word2,method,graph = 0):
             plt.ylabel('Y')
             plt.show()
             """
-        return word_resampled
+        return [word_resampled,word1_restruct]
 
     if method == 'poly':
         joint_list = get_jointlist(path_jointlist)
@@ -305,7 +306,7 @@ def word_resample(word1,word2,method,graph = 0):
             plt.suptitle('Fourier resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
             plt.show()
 
-        return word_resampled
+        return [word_resampled,word1_restruct]
 
     if method == 'interpolation':
         joint_list = get_jointlist(path_jointlist)
@@ -338,7 +339,7 @@ def word_resample(word1,word2,method,graph = 0):
             plt.suptitle('Interpolation of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
             plt.show()
 
-        return word_interpolated
+        return [word_interpolated,word1_restruct]
 
 
 def interpolate_signal(signal, final_length):
@@ -350,24 +351,48 @@ def interpolate_signal(signal, final_length):
     return signal_interpolated
 
 
+def compare(word1,word2,dist = 'euclidean'):
+    distance = 0
+    if dist == 'euclidean':
+        for i in range(3):
+            distance += spatial.distance.euclidean(word1[i], word2[i])
+    elif dist == 'hamming':
+        for i in range(3):
+            distance += spatial.distance.hamming(word1[i], word2[i])
+    elif dist == 'minkowsky':
+        for i in range(3):
+            distance += spatial.distance.minkowski(word1[i], word2[i])
+    elif dist == 'mahalanobis':
+        for i in range(3):
+            V = np.cov(np.array([word1, word2]).T)
+            IV = np.linalg.inv(V)
+            distance += spatial.distance.mahalanobis(word1[i], word2[i], IV)
+    elif dist == 'correlation':
+        corr = []
+        for i in range(3):
+            corr[i] = spatial.distance.correlation(word1[i], word2[i])
+        return corr
+
+    return distance
+
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
     source_dir = 'Sign_Language_BP/'
     # bvh_dir = os.path.join(source_dir, 'bvh/')  # all bvh files takes and dictionaries
-    bvh_dir = 'Sign_Language_BP/data_bvh/'
-    bvh_dict = 'Sign_Language_BP/bvh_dict/'
+    bvh_dir = 'data_bvh/'
+    bvh_dict = 'bvh_dict/'
     #glo_dir = 'source_data/'
-    glo_dir = 'Sign_Language_BP/source_data/'
+    glo_dir = 'source_data/'
     #word_dir = 'source_words/'
-    word_dir = 'Sign_Language_BP/source_words/'
+    word_dir = 'source_words/'
     #path_jointlist = 'data/joint_list.txt'
-    path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
+    path_jointlist = 'data/joint_list.txt'
     #path_metadata = 'data/meta.pkl'
-    path_metadata = 'Sign_Language_BP/data/meta.pkl'
+    path_metadata = 'data/meta.pkl'
     #path_trajectory = 'data/traj.pkl'
-    path_trajectory ='Sign_Language_BP/data/traj.pkl'
+    path_trajectory ='data/traj.pkl'
     #dict_file = os.path.join(source_dir, 'ultimate_dictionary2.txt')
-    dict_file = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
+    dict_file = 'data/ultimate_dictionary2.txt'
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
@@ -422,39 +447,10 @@ if __name__ == '__main__':
         unique_count.sort(key=lambda x: x[1], reverse=True)
         print((unique_count))
 
-    computing_all = False
-    if computing_all:
-        distance = np.zeros((len(traj), len(traj)))
-        for i in range(len(traj)):
-            for j in range(i):
-                if i == j:
-                    distance[i, j] = 0
-                else:
-                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
-                    distance[i, j] = distance[j, i] = (distance_computation_dtw(words_prepared))
-
-        print(np.shape(distance))
-        plt.imshow(distance, cmap='hot', interpolation='nearest')
-        plt.colorbar()
-        plt.show()
-        pass
-
-        for i in range(np.size(distance, 0)):
-            # vyberu jednu rádku confussion matice a najdu top několik nejlepších shod
-            tmp_slice = distance[i, :]
-            best10 = (tmp_slice.argsort()[:10][::-1])
-            print('Nejlepší tři shody: {}'.format(best10))
-            print('vybráno: {}'.format(meta[i]))
-            for b in best10:
-                print(b)
-                print(tmp_slice[b])
-                print(meta[b])
-            break
-
-    computing_one_word = False
-    if computing_one_word:
+    computing_one_word_dtw = False
+    if computing_one_word_dtw:
         word = 'zitra'
-        compute_one_word(word, path_jointlist, 20, graph=1)
+        one_word_dtw(word, path_jointlist, 20, graph=1)
     
     resample = False
     if resample:
@@ -465,8 +461,23 @@ if __name__ == '__main__':
         word2 = traj[110][:, joint, :]
         word2_meta = meta[110]
 
-        word2_resampled = word_resample(word2,word1,'interpolation',graph=1)
+        word2_resampled = word_resample(word2,word1,'fourier',graph=1)[0]
 
-    compute_words = True
-    if compute_words:
-        compare_words(5,1)
+    compute_dtw = False
+    if compute_dtw:
+        compute_dtw(5,1)
+
+    compare_signals = True
+    if compare_signals:
+        joint = 5
+        word1 = traj[0][:, joint, :]
+        word1_meta = meta[0]
+
+        word2 = traj[900][:, joint, :]
+        word2_meta = meta[900]
+
+        resample_out = word_resample(word2,word1,'interpolation',graph=1) #returns reorganized word1 and resampled word2
+        kind = 'euclidean'
+        distance = compare(resample_out[0],resample_out[1], dist = kind)
+
+        print('{} counted over {} and {}: {}'.format(kind, word1_meta[0], word2_meta[0], distance))

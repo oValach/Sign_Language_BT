@@ -118,7 +118,6 @@ def words_preparation(word1, word2, path_jointlist):
     return data_prepared
 
 
-# VICEDIM VERZE DTW, zkusit na testovacich slovech, jinem dtw algoritmus
 def distance_computation_dtw(data_prepared):
 
     dtw_dist = list()
@@ -216,7 +215,7 @@ def compute_dtw(word_amount, graph = 0):
     return distance
 
 
-def word_resample(word1,word2,method,graph = 0):
+def resample(word1,word2,method,graph = 0):
     if method == 'fourier':
         joint_list = get_jointlist(path_jointlist)
 
@@ -344,7 +343,7 @@ def word_resample(word1,word2,method,graph = 0):
 
 def interpolate_signal(signal, final_length):
     x = np.r_[0:len(signal)-1:complex(len(signal),1)]
-    f = interpolate.interp1d(x,signal,kind='linear')
+    f = interpolate.interp1d(x,signal,kind='linear') #ZKUSIT RUZNE DRUHY 
 
     to_interpolate = np.r_[0:len(signal)-1:complex(final_length,1)]
     signal_interpolated = f(to_interpolate)
@@ -485,7 +484,7 @@ if __name__ == '__main__':
         word2 = traj[900][:, joint, :]
         word2_meta = meta[900]
 
-        resample_out = word_resample(word2,word1,'interpolation',graph=1) #returns reorganized word1 and resampled word2
+        resample_out = resample(word2,word1,'interpolation',graph=1) #returns reorganized word1 and resampled word2
         kind = 'euclidean'
         distance = compare(resample_out[0],resample_out[1], dist = kind)
 

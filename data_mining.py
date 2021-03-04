@@ -248,13 +248,13 @@ def resample(word1,word2,method,graph = 0):
             """
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=5)
+            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
             ax[0].set_title('Resampled X axis')
             ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=5)
+            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=4)
             ax[1].set_title('Resampled Y axis')
             ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=5)
+            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=4)
             ax[2].set_title('Resampled Z axis')
             fig.legend(['Initial data signal','Resampled data signal'], loc='upper right')
             plt.suptitle('Fourier resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
@@ -293,13 +293,13 @@ def resample(word1,word2,method,graph = 0):
         if graph:
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=5)
+            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
             ax[0].set_title('Resampled X axis')
             ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=5)
+            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=4)
             ax[1].set_title('Resampled Y axis')
             ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=5)
+            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=4)
             ax[2].set_title('Resampled Z axis')
             fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
             plt.suptitle('Fourier resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
@@ -326,13 +326,13 @@ def resample(word1,word2,method,graph = 0):
         if graph:
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xinterp, word_interpolated[0],'*r--', linewidth=0.5, markersize=5)
+            ax[0].plot(xinterp, word_interpolated[0],'*r--', linewidth=0.5, markersize=4)
             ax[0].set_title('Interpolated X axis')
             ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xinterp, word_interpolated[1],'*r--', linewidth=0.5, markersize=5)
+            ax[1].plot(xinterp, word_interpolated[1],'*r--', linewidth=0.5, markersize=4)
             ax[1].set_title('Interpolated Y axis')
             ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xinterp, word_interpolated[2],'*r--', linewidth=0.5, markersize=5)
+            ax[2].plot(xinterp, word_interpolated[2],'*r--', linewidth=0.5, markersize=4)
             ax[2].set_title('Interpolated Z axis')
             fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
             plt.suptitle('Interpolation of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
@@ -387,20 +387,20 @@ if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
     source_dir = 'Sign_Language_BP/'
     # bvh_dir = os.path.join(source_dir, 'bvh/')  # all bvh files takes and dictionaries
-    bvh_dir = 'data_bvh/'
-    bvh_dict = 'bvh_dict/'
+    bvh_dir = 'Sign_Language_BP/data_bvh/'
+    bvh_dict = 'Sign_Language_BP/bvh_dict/'
     #glo_dir = 'source_data/'
-    glo_dir = 'source_data/'
+    glo_dir = 'Sign_Language_BP/source_data/'
     #word_dir = 'source_words/'
-    word_dir = 'source_words/'
+    word_dir = 'Sign_Language_BP/source_words/'
     #path_jointlist = 'data/joint_list.txt'
-    path_jointlist = 'data/joint_list.txt'
+    path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
     #path_metadata = 'data/meta.pkl'
-    path_metadata = 'data/meta.pkl'
+    path_metadata = 'Sign_Language_BP/data/meta.pkl'
     #path_trajectory = 'data/traj.pkl'
-    path_trajectory ='data/traj.pkl'
+    path_trajectory ='Sign_Language_BP/data/traj.pkl'
     #dict_file = os.path.join(source_dir, 'ultimate_dictionary2.txt')
-    dict_file = 'data/ultimate_dictionary2.txt'
+    dict_file = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
@@ -460,8 +460,8 @@ if __name__ == '__main__':
         word = 'zitra'
         one_word_dtw(word, path_jointlist, 20, graph=1)
     
-    resample = False
-    if resample:
+    resample_test = False
+    if resample_test:
         joint = 5
         word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
         word1_meta = meta[0]
@@ -469,7 +469,7 @@ if __name__ == '__main__':
         word2 = traj[110][:, joint, :]
         word2_meta = meta[110]
 
-        word2_resampled = word_resample(word2,word1,'fourier',graph=1)[0]
+        word2_resampled = resample(word2,word1,'fourier',graph=1)[0]
 
     compute_dtw = False
     if compute_dtw:
@@ -484,7 +484,7 @@ if __name__ == '__main__':
         word2 = traj[900][:, joint, :]
         word2_meta = meta[900]
 
-        resample_out = resample(word2,word1,'interpolation',graph=1) #returns reorganized word1 and resampled word2
+        resample_out = resample(word2,word1,'fourier',graph=1) #returns reorganized word1 and resampled word2
         kind = 'euclidean'
         distance = compare(resample_out[0],resample_out[1], dist = kind)
 

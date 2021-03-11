@@ -176,7 +176,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
         plt.xlabel('Vyskytu znaku "{}" v oblasti'.format(word))
         plt.ylabel('Seřazený dataset vzdáleností rozdělen do 37 oblastí')
         plt.xticks(np.arange(0, max(hist_data_plot), 1))
-        plt.title('Rozložení identických znaků ke znaku "{}" v seřazeném datasetu'.format(word))
+        plt.title('Rozložení znaků s významem "{}" v seřazeném datasetu'.format(word))
         plt.grid()
         plt.show()
 
@@ -471,11 +471,11 @@ if __name__ == '__main__':
 
         word2_resampled = resample(word2,word1,'fourier',graph=1)[0]
 
-    compute_dtw = False
-    if compute_dtw:
+    compute_dtw_more_words = True
+    if compute_dtw_more_words:
         compute_dtw(5,1)
 
-    compare_signals = True
+    compare_signals = False
     if compare_signals:
         joint = 5
         word1 = traj[0][:, joint, :]

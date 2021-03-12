@@ -6,6 +6,7 @@ import numpy as np
 import pickle as pk
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from scipy import signal, interpolate, spatial
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
@@ -246,6 +247,7 @@ def resample(word1,word2,method,graph = 0):
                 plt.ylabel('Y')
                 plt.show()
             """
+            mpl.style.use('seaborn')
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
             ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
@@ -291,6 +293,7 @@ def resample(word1,word2,method,graph = 0):
         xresampled = np.linspace(0, len(word1_restruct[0]), len(word_resampled[0]), endpoint=False)
         
         if graph:
+            mpl.style.use('seaborn')
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
             ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
@@ -324,20 +327,37 @@ def resample(word1,word2,method,graph = 0):
         xinterp = np.linspace(0, len(word1_restruct[0]), len(word_interpolated[0]), endpoint=False)
         
         if graph:
+            mpl.style.use('seaborn')
             fig, ax = plt.subplots(3,1, sharex=True)
             ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xinterp, word_interpolated[0],'*r--', linewidth=0.5, markersize=4)
+            ax[0].plot(xinterp, word_interpolated[0],'*r--', linewidth=0.5, markersize=6)
             ax[0].set_title('Interpolated X axis')
             ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xinterp, word_interpolated[1],'*r--', linewidth=0.5, markersize=4)
+            ax[1].plot(xinterp, word_interpolated[1],'*r--', linewidth=0.5, markersize=6)
             ax[1].set_title('Interpolated Y axis')
             ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xinterp, word_interpolated[2],'*r--', linewidth=0.5, markersize=4)
+            ax[2].plot(xinterp, word_interpolated[2],'*r--', linewidth=0.5, markersize=6)
             ax[2].set_title('Interpolated Z axis')
             fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
             plt.suptitle('Interpolation of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
             plt.show()
-
+            """
+            #POROVNANI DVOU PRUBEHU SLOV
+            mpl.style.use('seaborn')
+            fig, ax = plt.subplots(3,1, sharex=True)
+            ax[0].plot(xinterp, word1_restruct[0],'chocolate')
+            ax[0].plot( word2_restruct[0],'teal')
+            ax[0].set_title('X channel')
+            ax[1].plot(xinterp, word1_restruct[1],'chocolate')
+            ax[1].plot( word2_restruct[1],'teal')
+            ax[1].set_title('Y channel')
+            ax[2].plot(xinterp, word1_restruct[2],'chocolate')
+            ax[2].plot(word2_restruct[2],'teal')
+            ax[2].set_title('Z channel')
+            fig.legend(['1. occurence', '2. occurence'], loc='upper right')
+            plt.suptitle('Trajectory of right hand in 2 occurences of sign \'teplo\'',fontsize=15)
+            plt.show()
+            """
         return [word_interpolated,word1_restruct]
 
 
@@ -460,29 +480,29 @@ if __name__ == '__main__':
         word = 'zitra'
         one_word_dtw(word, path_jointlist, 20, graph=1)
     
-    resample_test = False
+    resample_test = True
     if resample_test:
         joint = 5
-        word1 = traj[0][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
-        word1_meta = meta[0]
+        word1 = traj[70][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
+        word1_meta = meta[70]
 
-        word2 = traj[110][:, joint, :]
-        word2_meta = meta[110]
+        word2 = traj[76][:, joint, :]
+        word2_meta = meta[76]
 
-        word2_resampled = resample(word2,word1,'fourier',graph=1)[0]
+        word2_resampled = resample(word2,word1,'interpolation',graph=1)[0]
 
-    compute_dtw_more_words = True
+    compute_dtw_more_words = False
     if compute_dtw_more_words:
         compute_dtw(5,1)
 
     compare_signals = False
     if compare_signals:
-        joint = 5
-        word1 = traj[0][:, joint, :]
-        word1_meta = meta[0]
+        joint = 3
+        word1 = traj[70][:, joint, :]
+        word1_meta = meta[70]
 
-        word2 = traj[900][:, joint, :]
-        word2_meta = meta[900]
+        word2 = traj[70][:, joint, :]
+        word2_meta = meta[70]
 
         resample_out = resample(word2,word1,'fourier',graph=1) #returns reorganized word1 and resampled word2
         kind = 'euclidean'

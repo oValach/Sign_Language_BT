@@ -67,7 +67,7 @@ if __name__ == "__main__":
         b = np.ones((3, delka2),dtype=np.double)
 
         n1 = np.random.randint(-3,10, size=(3, delka))
-        n2 = np.random.randint(-1,12, size=(3, delka2))
+        n2 = np.random.randint(-1,12, size=(3, delka))
 
         start = timer()
         #dist0 = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance

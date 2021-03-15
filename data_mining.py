@@ -402,8 +402,12 @@ def compare(word1,word2,dist = 'euclidean'):
         for i in range(3):
             distance += spatial.distance.chebyshev(word1[i], word2[i])
     elif dist =='fréchet':
+        word1_reformed = np.array([word1[0],word1[1],word1[2]])
+        word2_reformed = np.array([word2[0],word2[1],word2[2]])
+        distance = similaritymeasures.area_between_two_curves(word1_reformed, word2_reformed)
+    else:
         for i in range(3):
-            distance += similaritymeasures.area_between_two_curves(word1[i], word2[i])
+            distance += spatial.distance.euclidean(word1[i], word2[i])
     return distance
 
 if __name__ == '__main__':
@@ -483,7 +487,7 @@ if __name__ == '__main__':
         word = 'zitra'
         one_word_dtw(word, path_jointlist, 20, graph=1)
     
-    resample_test = True
+    resample_test = False
     if resample_test:
         joint = 5
         word1 = traj[70][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
@@ -498,7 +502,7 @@ if __name__ == '__main__':
     if compute_dtw_more_words:
         compute_dtw(5,1)
 
-    compare_signals = False
+    compare_signals = True
     if compare_signals:
         joint = 3
         word1 = traj[70][:, joint, :]
@@ -507,8 +511,8 @@ if __name__ == '__main__':
         word2 = traj[70][:, joint, :]
         word2_meta = meta[70]
 
-        resample_out = resample(word2,word1,'fourier',graph=1) #returns reorganized word1 and resampled word2
-        kind = 'euclidean'
+        resample_out = resample(word2,word1,'fourier',graph=0) #returns reorganized word1 and resampled word2
+        kind = 'hamming'
         distance = compare(resample_out[0],resample_out[1], dist = kind)
 
         print('{} counted over {} and {}: {}'.format(kind, word1_meta[0], word2_meta[0], distance))

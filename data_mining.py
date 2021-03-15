@@ -2,6 +2,7 @@ from lib import bvh2glo_simple, SL_dict
 import os
 import sys
 import collections
+import similaritymeasures
 import numpy as np
 import pickle as pk
 import pandas as pd
@@ -400,7 +401,9 @@ def compare(word1,word2,dist = 'euclidean'):
     elif dist == 'chebyshev':
         for i in range(3):
             distance += spatial.distance.chebyshev(word1[i], word2[i])
-
+    elif dist =='fréchet':
+        for i in range(3):
+            distance += similaritymeasures.area_between_two_curves(word1[i], word2[i])
     return distance
 
 if __name__ == '__main__':

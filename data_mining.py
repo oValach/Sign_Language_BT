@@ -1,6 +1,7 @@
 from lib import bvh2glo_simple, SL_dict
 import os
 import sys
+import dcor
 import collections
 import similaritymeasures
 import numpy as np
@@ -12,6 +13,7 @@ from scipy import signal, interpolate, spatial
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
 from dtw import dtw as dtw_slower
+from sklearn.metrics.pairwise import manhattan_distances
 
 
 def mine_data(in_directory, out_directory):
@@ -217,7 +219,7 @@ def compute_dtw(word_amount, graph = 0):
     return distance
 
 
-def resample(word1,word2,method,graph = 0):
+def resample(word1,word2,method,graph = 0, int_type = 'linear'):
     if method == 'fourier':
         joint_list = get_jointlist(path_jointlist)
 
@@ -228,11 +230,11 @@ def resample(word1,word2,method,graph = 0):
         for i in range(3):
             word1_restruct[i] = [frame[i] for frame in word1]
             word2_restruct[i] = [frame[i] for frame in word2]
-        x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]), endpoint=False)
+        x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]))
 
         for i in range(3):
             word_resampled[i] = signal.resample(word2_restruct[i], len(word1_restruct[i]))
-        xresampled = np.linspace(0, len(word1_restruct[0]), len(word_resampled[0]), endpoint=False)
+        xresampled = np.linspace(0, len(word1_restruct[0]), len(word_resampled[0]))
         
         if graph:
             """
@@ -248,19 +250,37 @@ def resample(word1,word2,method,graph = 0):
                 plt.ylabel('Y')
                 plt.show()
             """
+            interpolated_for_graph = np.zeros(shape=(3),dtype = object)
+            for j in range(len(word_resampled)):
+                for i in range(len(word_resampled[j])):
+                    if i%4 == 0:
+                        interpolated_for_graph[j] = np.append(interpolated_for_graph[j],word_resampled[j][i])
+
+            interpolated_for_graph[0] = np.delete(interpolated_for_graph[0],0)
+            interpolated_for_graph[1] = np.delete(interpolated_for_graph[1],0)
+            interpolated_for_graph[2] = np.delete(interpolated_for_graph[2],0)
+
+            xinterpgraph = np.linspace(0, len(word1_restruct[0]), len(interpolated_for_graph[0]))
+            
             mpl.style.use('seaborn')
             fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
-            ax[0].set_title('Resampled X axis')
-            ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=4)
-            ax[1].set_title('Resampled Y axis')
-            ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=4)
-            ax[2].set_title('Resampled Z axis')
-            fig.legend(['Initial data signal','Resampled data signal'], loc='upper right')
-            plt.suptitle('Fourier resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
+            ax[0].plot([0.0,9.21428571], [-7.969536608198854,-7.974704499955581], marker="*", markersize=6, linewidth=0.3, color = 'r')
+            ax[0].plot(x, word2_restruct[0], marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[0].plot(xresampled, word_resampled[0], color = 'r', linewidth=0.5, markersize=4)
+            ax[0].plot(xinterpgraph, interpolated_for_graph[0],'*',markersize=6, color = 'r')
+            ax[0].set_title('Převzorkovaná osa X')
+            ax[1].plot(x, word2_restruct[1], marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[1].plot(xresampled, word_resampled[1], color = 'r', linewidth=0.5, markersize=4)
+            ax[1].plot(xinterpgraph, interpolated_for_graph[1],'*',markersize=6, color = 'r')
+            ax[1].set_title('Převzorkovaná osa Y')
+            ax[2].plot(x, word2_restruct[2], marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[2].plot(xresampled, word_resampled[2], color = 'r', linewidth=0.5, markersize=4)
+            ax[2].plot(xinterpgraph, interpolated_for_graph[2],'*',markersize=6, color = 'r')
+            ax[2].set_title('Převzorkovaná osa Z')
+            ax[2].set_xlabel('čas [snímek]')
+            ax[1].set_ylabel('vzdálenost od počátku [cm]')
+            fig.legend(['Převzorkovaný signál','Původní signál'], loc='upper right')
+            #plt.suptitle('Furierova transformace trajektorie kloubu {} na délku slova "{}" z délky slova "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
             plt.show()
             """
             #3D graph
@@ -306,7 +326,7 @@ def resample(word1,word2,method,graph = 0):
             ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=4)
             ax[2].set_title('Resampled Z axis')
             fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
-            plt.suptitle('Fourier resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
+            plt.suptitle('Polyphase filtering resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
             plt.show()
 
         return [word_resampled,word1_restruct]
@@ -317,54 +337,90 @@ def resample(word1,word2,method,graph = 0):
         word1_restruct = np.zeros(shape=(3),dtype = object)
         word2_restruct = np.zeros(shape=(3),dtype = object)
         word_interpolated = np.zeros(shape=(3),dtype = object)
+        word_interpolatedx = np.zeros(shape=(3),dtype = object)
+        word_interpolatedxx = np.zeros(shape=(3),dtype = object)
 
         for i in range(3):
             word1_restruct[i] = [frame[i] for frame in word1]
             word2_restruct[i] = [frame[i] for frame in word2]
-        x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]), endpoint=False)
+        x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]))
 
         for i in range(3):
-            word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]))
-        xinterp = np.linspace(0, len(word1_restruct[0]), len(word_interpolated[0]), endpoint=False)
+            word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), int_type)
+            word_interpolatedx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]*10), 'linear')
+            word_interpolatedxx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), 'linear')
+        xinterp = np.linspace(0, len(word1_restruct[0]), len(word_interpolated[0]))
+        xinterpx = np.linspace(0, len(word1_restruct[0]), len(word_interpolatedx[0]*10))
         
         if graph:
+            
+            interpolated_for_graph = np.zeros(shape=(3),dtype = object)
+            for j in range(len(word_interpolated)):
+                for i in range(len(word_interpolated[j])):
+                    if i%4 == 0:
+                        interpolated_for_graph[j] = np.append(interpolated_for_graph[j],word_interpolated[j][i])
+
+            interpolated_for_graph[0] = np.delete(interpolated_for_graph[0],0)
+            interpolated_for_graph[1] = np.delete(interpolated_for_graph[1],0)
+            interpolated_for_graph[2] = np.delete(interpolated_for_graph[2],0)
+
+            xinterpgraph = np.linspace(0, len(word1_restruct[0]), len(interpolated_for_graph[0]))
+            
+            interpolated_for_graphx = np.zeros(shape=(3),dtype = object)
+            for j in range(len(word_interpolatedxx)):
+                for i in range(len(word_interpolatedxx[j])):
+                    if i%4 == 0:
+                        interpolated_for_graphx[j] = np.append(interpolated_for_graphx[j],word_interpolatedxx[j][i])
+
+            interpolated_for_graphx[0] = np.delete(interpolated_for_graphx[0],0)
+            interpolated_for_graphx[1] = np.delete(interpolated_for_graphx[1],0)
+            interpolated_for_graphx[2] = np.delete(interpolated_for_graphx[2],0)
+
+            xinterpgraphx = np.linspace(0, len(word1_restruct[0]), len(interpolated_for_graphx[0]))
+            
             mpl.style.use('seaborn')
             fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xinterp, word_interpolated[0],'*r--', linewidth=0.5, markersize=6)
-            ax[0].set_title('Interpolated X axis')
-            ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xinterp, word_interpolated[1],'*r--', linewidth=0.5, markersize=6)
-            ax[1].set_title('Interpolated Y axis')
-            ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xinterp, word_interpolated[2],'*r--', linewidth=0.5, markersize=6)
-            ax[2].set_title('Interpolated Z axis')
-            fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
-            plt.suptitle('Interpolation of {} to len of word "{}" from len of word {}'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
+            ax[0].plot(x, word2_restruct[0],marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[0].plot([0.0,4.03125], [-4.362433016513284,-4.306118578837304],marker="*", markersize=6, linewidth=0.7, color = 'r')
+            ax[0].plot(xinterp, word_interpolated[0],'r', linewidth=0.7)
+            ax[0].plot(xinterpgraph, interpolated_for_graph[0],'*',markersize=6, color = 'r')
+            ax[0].set_title('Interpolovaná osa X')
+
+            ax[1].plot(x, word2_restruct[1],marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[1].plot(xinterp, word_interpolated[1],'r', linewidth=0.7)
+            ax[1].plot(xinterpgraph, interpolated_for_graph[1],'*', markersize=6, color = 'r')
+            ax[1].set_title('Interpolovaná osa Y')
+
+            ax[2].plot(x, word2_restruct[2],marker='D', color = 'k', linewidth=0.3, markersize=4)
+            ax[2].plot(xinterp, word_interpolated[2],'r', linewidth=0.7)
+            ax[2].plot(xinterpgraph, interpolated_for_graph[2],'*', markersize=6, color = 'r')
+            ax[2].set_title('Interpolovaná osa Z')
+            ax[2].set_xlabel('čas [snímek]')
+            ax[1].set_ylabel('vzdálenost od počátku [cm]')
+            fig.legend(['Původní signál','Interpolovaný signál'], loc='upper right')
             plt.show()
-            """
-            #POROVNANI DVOU PRUBEHU SLOV
-            mpl.style.use('seaborn')
-            fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot(xinterp, word1_restruct[0],'chocolate')
-            ax[0].plot( word2_restruct[0],'teal')
-            ax[0].set_title('X channel')
-            ax[1].plot(xinterp, word1_restruct[1],'chocolate')
-            ax[1].plot( word2_restruct[1],'teal')
-            ax[1].set_title('Y channel')
-            ax[2].plot(xinterp, word1_restruct[2],'chocolate')
-            ax[2].plot(word2_restruct[2],'teal')
-            ax[2].set_title('Z channel')
-            fig.legend(['1. occurence', '2. occurence'], loc='upper right')
-            plt.suptitle('Trajectory of right hand in 2 occurences of sign \'teplo\'',fontsize=15)
+
+            #Rozdil linearni a kubicke interpolace
+            fig = plt.figure()
+            plt.plot(x, word2_restruct[0],marker='D', color = 'k', linewidth=0.3, markersize=7)
+            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304],marker=".", markersize=10, linewidth=0.7, color = 'r')
+            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304],marker=".", markersize=10, linewidth=0.7, color = 'b')
+            plt.plot(xinterp, word_interpolated[0],'r', linewidth=0.7)
+            plt.plot(xinterpgraph, interpolated_for_graph[0],'.',markersize=10, color = 'r')
+            plt.plot(xinterpx, word_interpolatedx[0],'b', linewidth=0.7)
+            plt.plot(xinterpgraphx, interpolated_for_graphx[0],'.',markersize=10, color = 'b')
+
+            plt.xlabel('čas [snímek]')
+            plt.ylabel('vzdálenost od počátku [cm]')
+            fig.legend(['Původní signál','Kubicky interpolovaný signál', 'Lineárně interpolovaný signál'], loc='upper right')
             plt.show()
-            """
-        return [word_interpolated,word1_restruct]
+
+        return [word2_restruct,word_interpolated,word1_restruct]
 
 
-def interpolate_signal(signal, final_length):
+def interpolate_signal(signal, final_length, int_type = 'linear'):
     x = np.r_[0:len(signal)-1:complex(len(signal),1)]
-    f = interpolate.interp1d(x,signal,kind='linear') #ZKUSIT RUZNE DRUHY 
+    f = interpolate.interp1d(x,signal,kind=int_type)
 
     to_interpolate = np.r_[0:len(signal)-1:complex(final_length,1)]
     signal_interpolated = f(to_interpolate)
@@ -373,41 +429,40 @@ def interpolate_signal(signal, final_length):
 
 def compare(word1,word2,dist = 'euclidean'):
     distance = 0
+    word1 = np.array([word1[0],word1[1],word1[2]])
+    word2 = np.array([word2[0],word2[1],word2[2]])
     if dist == 'euclidean':
-        for i in range(3):
-            distance += spatial.distance.euclidean(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.euclidean(word1[:,i],word2[:,i])
     elif dist == 'hamming':
-        for i in range(3):
-            distance += spatial.distance.hamming(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.hamming(word1[:,i],word2[:,i])
     elif dist == 'minkowsky':
-        for i in range(3):
-            distance += spatial.distance.minkowski(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.minkowski(word1[:,i],word2[:,i], p=3)
     elif dist == 'mahalanobis':
-        for i in range(3):
-            V = np.cov(np.array([word1, word2]).T)
-            IV = np.linalg.inv(V)
-            distance += spatial.distance.mahalanobis(word1[i], word2[i], IV)
-    elif dist == 'correlation':
-        corr = []
-        for i in range(3):
-            corr[i] = spatial.distance.correlation(word1[i], word2[i])
-        return corr
+        for i in range(len(word1[1])):
+            V = np.cov(np.array([word1[:,i],word2[:,i]]).T)
+            IV = np.linalg.pinv(V)
+            distance += spatial.distance.mahalanobis(word1[:,i],word2[:,i], IV)
+    elif dist == 'pearson':
+        return np.corrcoef(word1, word2)
+    elif dist == 'correlationDistance':
+        return dcor.distance_correlation(word1, word2)
     elif dist == 'canberra':
-        for i in range(3):
-            distance += spatial.distance.canberra(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.canberra(word1[:,i],word2[:,i])
     elif dist == 'braycurtis':
-        for i in range(3):
-            distance += spatial.distance.braycurtis(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.braycurtis(word1[:,i],word2[:,i])
     elif dist == 'chebyshev':
-        for i in range(3):
-            distance += spatial.distance.chebyshev(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.chebyshev(word1[:,i],word2[:,i])
     elif dist =='fréchet':
-        word1_reformed = np.array([word1[0],word1[1],word1[2]])
-        word2_reformed = np.array([word2[0],word2[1],word2[2]])
-        distance = similaritymeasures.area_between_two_curves(word1_reformed, word2_reformed)
+        distance = similaritymeasures.area_between_two_curves(word1, word2)
     else:
-        for i in range(3):
-            distance += spatial.distance.euclidean(word1[i], word2[i])
+        for i in range(len(word1[1])):
+            distance += spatial.distance.euclidean(word1[:,i],word2[:,i])
     return distance
 
 if __name__ == '__main__':
@@ -490,14 +545,14 @@ if __name__ == '__main__':
     resample_test = False
     if resample_test:
         joint = 5
-        word1 = traj[70][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
-        word1_meta = meta[70]
+        word1 = traj[191][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
+        word1_meta = meta[191]
 
-        word2 = traj[76][:, joint, :]
-        word2_meta = meta[76]
+        word2 = traj[700][:, joint, :]
+        word2_meta = meta[700]
 
-        word2_resampled = resample(word2,word1,'interpolation',graph=1)[0]
-
+        [word2_restruct,word_interpolated,word1_restruct] = resample(word2,word1,'interpolation', graph=1 ,int_type = 'cubic')
+        
     compute_dtw_more_words = False
     if compute_dtw_more_words:
         compute_dtw(5,1)
@@ -505,14 +560,14 @@ if __name__ == '__main__':
     compare_signals = True
     if compare_signals:
         joint = 3
-        word1 = traj[70][:, joint, :]
-        word1_meta = meta[70]
+        word1 = traj[900][:, joint, :]
+        word1_meta = meta[220]
 
-        word2 = traj[70][:, joint, :]
-        word2_meta = meta[70]
+        word2 = traj[200][:, joint, :]
+        word2_meta = meta[200]
 
-        resample_out = resample(word2,word1,'fourier',graph=0) #returns reorganized word1 and resampled word2
-        kind = 'hamming'
-        distance = compare(resample_out[0],resample_out[1], dist = kind)
+        resample_out = resample(word2,word1,'interpolation',graph=0) #returns reorganized word1 and resampled word2
+        kind = 'fréchet'
+        distance = compare(resample_out[1],resample_out[2], dist = kind)
 
         print('{} counted over {} and {}: {}'.format(kind, word1_meta[0], word2_meta[0], distance))

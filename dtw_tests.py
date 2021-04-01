@@ -4,6 +4,7 @@ import operator
 import pandas as pd
 import numpy as np
 import random
+import dcor
 import pickle as pkl
 import similaritymeasures
 import matplotlib.pyplot as plt
@@ -70,10 +71,11 @@ if __name__ == "__main__":
         n2 = np.random.randint(-1,12, size=(3, delka))
 
         start = timer()
-        #dist0 = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance
-        #dist1 = dtw_slower(np.transpose(a),np.transpose(b)).distance    #python dtw
-        #dist2  = fastdtw(np.transpose(a),np.transpose(b),dist=euclidean)[0]    #python fastdtw
-        dist3 = similaritymeasures.area_between_two_curves(n1, n2) #computing area between 2 trajetories - frechet computes only max length of the connection
+        #dist = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance
+        dist = dcor.distance_correlation(n1,n2) #test korelační vzdálenosti
+        #dist = dtw_slower(np.transpose(a),np.transpose(b)).distance    #python dtw
+        #dist  = fastdtw(np.transpose(a),np.transpose(b),dist=euclidean)[0]    #python fastdtw
+        #dist = similaritymeasures.area_between_two_curves(n1, n2) #computing area between 2 trajetories - frechet computes only max length of the connection
         end = timer()
 
-        print('{}, čas: {}'.format(dist3, end-start))
+        print('{}, čas: {}'.format(dist, end-start))

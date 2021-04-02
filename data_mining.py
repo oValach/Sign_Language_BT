@@ -13,6 +13,8 @@ from scipy import signal, interpolate, spatial
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
 from dtw import dtw as dtw_slower
+from sdtw import SoftDTW
+from sdtw.distance import SquaredEuclidean
 from sklearn.metrics.pairwise import manhattan_distances
 
 
@@ -122,13 +124,19 @@ def words_preparation(word1, word2, path_jointlist):
     return data_prepared
 
 
-def distance_computation_dtw(data_prepared):
+def distance_computation_dtw(data_prepared, dtw_type):
 
     dtw_dist = list()
 
-    for key, val in data_prepared.items():
+    for _, val in data_prepared.items():
 
-        dtw_dist.append(dtw_ndim.distance_fast(np.transpose(val[0]),np.transpose(val[1])))
+        if dtw_type == 'softdtw':
+            D = SquaredEuclidean(val[0].T, val[1].T)
+            sdtw = SoftDTW(D, gamma=1.0)
+            dist = sdtw.compute()
+            dtw_dist.append(dist)
+        else:
+            dtw_dist.append(dtw_ndim.distance_fast(np.transpose(val[0]),np.transpose(val[1])))
 
     return np.mean(dtw_dist)
 
@@ -140,7 +148,7 @@ def get_jointlist(path_jointlist):
     return joints
     
 
-def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
+def one_word_dtw(word, path_jointlist, number_of_mins, dtw_type = 'dtw',graph = 1):
 
     sign_name_list = [m[0] for m in meta]
     try:
@@ -151,14 +159,14 @@ def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
 
     occurences = sign_name_list.count(word)
 
-    print('{} vyskytu slova {}'.format(occurences, word))
+    print('{} vyskytu slova "{}"'.format(occurences, word))
     word_index = input('Index instance slova na testovani (0,{}): '.format(occurences-1))
     word_traj = traj[idx+int(word_index)]
 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
         words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
-        distance[i] = (distance_computation_dtw(words_prepared))
+        distance[i] = (distance_computation_dtw(words_prepared, dtw_type))
 
     sorted_distances = (distance.argsort())
     sorted_words = [meta[item][0] for item in sorted_distances]
@@ -184,6 +192,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
         plt.grid()
         plt.show()
 
+    print('\nSerazene vysledky {} slova "{}":'.format(dtw_type, word))
     print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(100,best100_occurences))
     print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(500,best500_occurences))
     print('Nejlepších {} shod s {}.instanci slova: {}'.format(number_of_mins,word_index,word))
@@ -193,7 +202,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins,graph = 1):
     return bestentered
 
 
-def compute_dtw(word_amount, graph = 0):
+def compute_dtw(word_amount, dtw_type = 'dtw', graph = 0):
 
     if word_amount == -1:
         distance = np.zeros((len(traj), len(traj)))
@@ -206,9 +215,9 @@ def compute_dtw(word_amount, graph = 0):
                 distance[i, j] = 0
             else:
                 words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
-                distance[i, j] = (distance_computation_dtw(words_prepared))
+                distance[i, j] = (distance_computation_dtw(words_prepared, dtw_type))
                 try:
-                    distance[j, i] = (distance_computation_dtw(words_prepared))
+                    distance[j, i] = (distance_computation_dtw(words_prepared, dtw_type))
                 except:
                     pass
     if graph:
@@ -537,10 +546,10 @@ if __name__ == '__main__':
         unique_count.sort(key=lambda x: x[1], reverse=True)
         print((unique_count))
 
-    computing_one_word_dtw = False
+    computing_one_word_dtw = True
     if computing_one_word_dtw:
         word = 'zitra'
-        one_word_dtw(word, path_jointlist, 20, graph=1)
+        one_word_dtw(word, path_jointlist, 20, 'softdtw', graph=1)
     
     resample_test = False
     if resample_test:
@@ -557,7 +566,7 @@ if __name__ == '__main__':
     if compute_dtw_more_words:
         compute_dtw(5,1)
 
-    compare_signals = True
+    compare_signals = False
     if compare_signals:
         joint = 3
         word1 = traj[900][:, joint, :]

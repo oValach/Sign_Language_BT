@@ -8,6 +8,8 @@ import dcor
 import pickle as pkl
 import similaritymeasures
 import matplotlib.pyplot as plt
+from sdtw import SoftDTW
+from sdtw.distance import SquaredEuclidean
 from dtw import dtw as dtw_slower
 from dtaidistance import dtw
 from dtaidistance import dtw_ndim
@@ -71,11 +73,22 @@ if __name__ == "__main__":
         n2 = np.random.randint(-1,12, size=(3, delka))
 
         start = timer()
-        #dist = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance
-        dist = dcor.distance_correlation(n1,n2) #test korelační vzdálenosti
-        #dist = dtw_slower(np.transpose(a),np.transpose(b)).distance    #python dtw
-        #dist  = fastdtw(np.transpose(a),np.transpose(b),dist=euclidean)[0]    #python fastdtw
-        #dist = similaritymeasures.area_between_two_curves(n1, n2) #computing area between 2 trajetories - frechet computes only max length of the connection
+        #dist1 = dtw_ndim.distance_fast(np.transpose(a),np.transpose(b),only_ub=True)  #python dtaidistance
+        #dist = dcor.distance_correlation(n1,n2) #test korelační vzdálenosti
+        #dist2 = dtw_slower(np.transpose(a),np.transpose(b)).distance    #python dtw
+        #dist3  = fastdtw(np.transpose(a),np.transpose(b),dist=euclidean)[0]    #python fastdtw
+        dist = similaritymeasures.area_between_two_curves(n1, n2) #computing area between 2 trajetories - frechet computes only max length of the connection
         end = timer()
+
+        start1 = timer()
+        D = SquaredEuclidean(a.T, b.T)
+        sdtw = SoftDTW(D, gamma=1.0)
+        # soft-DTW discrepancy, approaches DTW as gamma -> 0
+        dist = sdtw.compute()
+        # gradient w.r.t. D, shape = [m, n], which is also the expected alignment matrix
+        #E = sdtw.grad()
+        # gradient w.r.t. X, shape = [m, d]
+        #G = D.jacobian_product(E)
+        end1 = timer()
 
         print('{}, čas: {}'.format(dist, end-start))

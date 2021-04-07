@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
         for key, val in dtw_out[0].items():
             print('')
-  
+
     meta_traj_export = True
     if meta_traj_export:
         meta = []

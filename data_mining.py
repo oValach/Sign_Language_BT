@@ -16,6 +16,7 @@ from dtw import dtw as dtw_slower
 from sdtw import SoftDTW
 from sdtw.distance import SquaredEuclidean
 from sklearn.metrics.pairwise import manhattan_distances
+from timeit import default_timer as timer
 
 
 def mine_data(in_directory, out_directory):
@@ -62,14 +63,14 @@ def create_trajectory_matrix(dictionary_data):
 
 
 def words_preparation(word1, word2, path_jointlist):
-    """Counts dtw with euclidean distance between given word trajectory coordinate signals
+    """Prepares 2 signals for dtw to be counted on them
     Args:
-        word1 (list): First trajectory to count in dtw fcn
-        word2 (list): Second trajectory to count in dtw fcn
+        word1 (list): First signal to count in dtw fcn
+        word2 (list): Second signal to count in dtw fcn
         path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
 
     Returns:
-        [list]: A list of frames values for each joint separately
+        [list]: A list of prepared values for each joint separately
     """
 
     jointlist = get_jointlist(path_jointlist)
@@ -124,13 +125,20 @@ def words_preparation(word1, word2, path_jointlist):
     return data_prepared
 
 
-def distance_computation_dtw(data_prepared, dtw_type):
+def distance_computation_dtw(data_prepared, alg_type):
+    """Computes 2 types of DTW algorithm on given data from words_preparation fcn
+    Args:
+        data_prepared (dictionary) = words_preparation fcn output
+
+    Returns:
+        [double]: Mean of distances for separate joints counted between 2 instances of words
+    """
 
     dtw_dist = list()
 
     for _, val in data_prepared.items():
 
-        if dtw_type == 'softdtw':
+        if alg_type == 'softdtw':
             D = SquaredEuclidean(val[0].T, val[1].T)
             sdtw = SoftDTW(D, gamma=1.0)
             dist = sdtw.compute()
@@ -142,13 +150,31 @@ def distance_computation_dtw(data_prepared, dtw_type):
 
 
 def get_jointlist(path_jointlist):
+    """Returns joint list
+    Args:
+        path_jointlist (string) = path to the joint_list.txt file in pc
+
+    Returns:
+        [list]: List of joints
+    """
     file_joints = open(path_jointlist, 'r')
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     return joints
     
 
-def one_word_dtw(word, path_jointlist, number_of_mins, dtw_type = 'dtw',graph = 1):
+def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph = 1):
+    """Computes DTW distance between 1 word and all other words
+    Args:
+        word (string) = a given word
+        path_jointlist (string) = a path to the joint_list.txt file in pc
+        number_of_mins (int) = a number of minimum values that are given as output
+        alg_type (string) = dtw or softdtw algorithm
+        graph (boolean) = yes or no to display a graph of distance occurences in sorted words data set
+
+    Returns:
+        [list]: List of [number_of_mins] minimum values found with information
+    """
 
     sign_name_list = [m[0] for m in meta]
     try:
@@ -166,7 +192,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, dtw_type = 'dtw',graph = 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
         words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
-        distance[i] = (distance_computation_dtw(words_prepared, dtw_type))
+        distance[i] = (distance_computation_dtw(words_prepared, alg_type))
 
     sorted_distances = (distance.argsort())
     sorted_words = [meta[item][0] for item in sorted_distances]
@@ -192,7 +218,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, dtw_type = 'dtw',graph = 
         plt.grid()
         plt.show()
 
-    print('\nSerazene vysledky {} slova "{}":'.format(dtw_type, word))
+    print('\nSerazene vysledky {} slova "{}":'.format(alg_type, word))
     print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(100,best100_occurences))
     print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(500,best500_occurences))
     print('Nejlepších {} shod s {}.instanci slova: {}'.format(number_of_mins,word_index,word))
@@ -202,7 +228,31 @@ def one_word_dtw(word, path_jointlist, number_of_mins, dtw_type = 'dtw',graph = 
     return bestentered
 
 
-def compute_dtw(word_amount, dtw_type = 'dtw', graph = 0):
+def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0):
+    """Computes distance between given number of words and all others
+    Args:
+        word_amount [int]: a number of words to count the distance, takes all if the number equals -1
+        alg_type [string]: 'dtw', 'softdtw' or 'method_combination' options, continues with this type of algorithm
+        resample_method [string]: 'interpolation' or 'fourier' resample
+        int_method [string]: if 'interpolation' resample_method is chosen, options are 'linear', 'quadratic' and 'cubic' interpolation
+        distance_method [string]: type of metrics to count distance by: 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+        graph [boolean]: yes or no to display a cmap='hot' graph of all words distances
+
+    Returns:
+        [list]: A list of all distances between the given number of words and all others
+    """
+
+    #Check of methods and metrics used
+    if alg_type == 'dtw':
+        print('Computing DTW ... ...')
+    elif alg_type == 'softdtw':
+        print('Computing SoftDTW ... ...')
+    else:
+        print('Resample method: {}'.format(resample_method))
+        if resample_method == 'interpolation':
+            print('Interpolation type: {}'.format(int_method))
+        print('Distance computation by metrics: {}'.format(distance_method))
+        print('Computing ... ...')
 
     if word_amount == -1:
         distance = np.zeros((len(traj), len(traj)))
@@ -214,12 +264,42 @@ def compute_dtw(word_amount, dtw_type = 'dtw', graph = 0):
             if i == j:
                 distance[i, j] = 0
             else:
-                words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
-                distance[i, j] = (distance_computation_dtw(words_prepared, dtw_type))
-                try:
-                    distance[j, i] = (distance_computation_dtw(words_prepared, dtw_type))
-                except:
-                    pass
+                if alg_type == 'dtw': #Classic DTW algorithm
+
+                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
+                    distance[i, j] = (distance_computation_dtw(words_prepared, 'dtw'))
+                    try:
+                        distance[j, i] = (distance_computation_dtw(words_prepared, 'dtw'))
+                    except:
+                        pass
+
+                elif alg_type == 'softdtw':#Differentiable SoftDTW version of DTW
+
+                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
+                    distance[i, j] = (distance_computation_dtw(words_prepared, 'softdtw'))
+                    try:
+                        distance[j, i] = (distance_computation_dtw(words_prepared, 'softdtw'))
+                    except:
+                        pass
+
+                elif alg_type == 'method_combination': #Signal resample and distance computation separately
+                    
+                    selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand in jointlist
+                    distances_joints = []
+
+                    for k in range(len(selected_joints_idxs)):
+                        resample_out = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], resample_method, int_method, graph=0)
+                        one_joint_distance = (compare(resample_out[1],resample_out[2], dist = distance_method))
+                        distances_joints.append(one_joint_distance)
+
+                    joints_distance_mean = np.mean(distances_joints)
+                    distance[i, j] = joints_distance_mean
+                    try:
+                        distance[j, i] = joints_distance_mean
+                    except:
+                        pass
+                else:
+                    print('Nedefinován typ algoritmu.')
     if graph:
         plt.imshow(distance, cmap='hot', interpolation='nearest')
         plt.colorbar()
@@ -228,7 +308,18 @@ def compute_dtw(word_amount, dtw_type = 'dtw', graph = 0):
     return distance
 
 
-def resample(word1,word2,method,graph = 0, int_type = 'linear'):
+def resample(word1, word2, method = 'interpolation', int_method = 'linear', graph = 0):
+    """Resamples word2 signal to the length of the word1 signal
+    Args:
+        word1 [list]: signal, to ots length is being the first one resampled
+        word2 [list]: signal that is being resampled
+        method [string]: the method of resampling used, 'interpolation', 'fourier'
+        int_method [string]: the method of interpolation if the method 'interpolation' is selected
+        graph [boolean]: yes or no to display graph with comparison of old and resampled signal
+
+    Returns:
+        [list]: List of lists, initial word2 signal restructualized, resampled word2 signal, initial word1 signal restructualized
+    """
     if method == 'fourier':
         joint_list = get_jointlist(path_jointlist)
 
@@ -304,41 +395,7 @@ def resample(word1,word2,method,graph = 0, int_type = 'linear'):
             plt.ylabel('Y')
             plt.show()
             """
-        return [word_resampled,word1_restruct]
-
-    if method == 'poly':
-        joint_list = get_jointlist(path_jointlist)
-
-        word1_restruct = np.zeros(shape=(3),dtype = object)
-        word2_restruct = np.zeros(shape=(3),dtype = object)
-        word_resampled = np.zeros(shape=(3),dtype = object)
-
-        for i in range(3):
-            word1_restruct[i] = [frame[i] for frame in word1]
-            word2_restruct[i] = [frame[i] for frame in word2]
-        x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]), endpoint=False)
-
-        for i in range(3):
-            word_resampled[i] = signal.resample_poly(word2_restruct[i], len(word1_restruct[i]), len(word2_restruct[i]))
-        xresampled = np.linspace(0, len(word1_restruct[0]), len(word_resampled[0]), endpoint=False)
-        
-        if graph:
-            mpl.style.use('seaborn')
-            fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot(x, word2_restruct[0],'g')
-            ax[0].plot(xresampled, word_resampled[0],'*r--', linewidth=0.5, markersize=4)
-            ax[0].set_title('Resampled X axis')
-            ax[1].plot(x, word2_restruct[1],'g')
-            ax[1].plot(xresampled, word_resampled[1],'*r--', linewidth=0.5, markersize=4)
-            ax[1].set_title('Resampled Y axis')
-            ax[2].plot(x, word2_restruct[2],'g')
-            ax[2].plot(xresampled, word_resampled[2],'*r--', linewidth=0.5, markersize=4)
-            ax[2].set_title('Resampled Z axis')
-            fig.legend(['Initial data signal','Interpolated data signal'], loc='upper right')
-            plt.suptitle('Polyphase filtering resample of {} to len of word "{}" from len of word "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
-            plt.show()
-
-        return [word_resampled,word1_restruct]
+        return [word2_restruct,word_resampled,word1_restruct]
 
     if method == 'interpolation':
         joint_list = get_jointlist(path_jointlist)
@@ -346,8 +403,9 @@ def resample(word1,word2,method,graph = 0, int_type = 'linear'):
         word1_restruct = np.zeros(shape=(3),dtype = object)
         word2_restruct = np.zeros(shape=(3),dtype = object)
         word_interpolated = np.zeros(shape=(3),dtype = object)
-        word_interpolatedx = np.zeros(shape=(3),dtype = object)
-        word_interpolatedxx = np.zeros(shape=(3),dtype = object)
+        if graph:
+            word_interpolatedx = np.zeros(shape=(3),dtype = object)
+            word_interpolatedxx = np.zeros(shape=(3),dtype = object)
 
         for i in range(3):
             word1_restruct[i] = [frame[i] for frame in word1]
@@ -355,11 +413,13 @@ def resample(word1,word2,method,graph = 0, int_type = 'linear'):
         x = np.linspace(0, len(word1_restruct[0]), len(word2_restruct[0]))
 
         for i in range(3):
-            word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), int_type)
-            word_interpolatedx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]*10), 'linear')
-            word_interpolatedxx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), 'linear')
-        xinterp = np.linspace(0, len(word1_restruct[0]), len(word_interpolated[0]))
-        xinterpx = np.linspace(0, len(word1_restruct[0]), len(word_interpolatedx[0]*10))
+            word_interpolated[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), int_method)
+            if graph:
+                word_interpolatedx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]*10), 'linear')
+                word_interpolatedxx[i] = interpolate_signal(word2_restruct[i],len(word1_restruct[i]), 'linear')
+        if graph:
+            xinterp = np.linspace(0, len(word1_restruct[0]), len(word_interpolated[0]))
+            xinterpx = np.linspace(0, len(word1_restruct[0]), len(word_interpolatedx[0]*10))
         
         if graph:
             
@@ -412,8 +472,8 @@ def resample(word1,word2,method,graph = 0, int_type = 'linear'):
             #Rozdil linearni a kubicke interpolace
             fig = plt.figure()
             plt.plot(x, word2_restruct[0],marker='D', color = 'k', linewidth=0.3, markersize=7)
-            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304],marker=".", markersize=10, linewidth=0.7, color = 'r')
-            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304],marker=".", markersize=10, linewidth=0.7, color = 'b')
+            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304], marker=".", markersize=10, linewidth=0.7, color = 'r')
+            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304], marker=".", markersize=10, linewidth=0.7, color = 'b')
             plt.plot(xinterp, word_interpolated[0],'r', linewidth=0.7)
             plt.plot(xinterpgraph, interpolated_for_graph[0],'.',markersize=10, color = 'r')
             plt.plot(xinterpx, word_interpolatedx[0],'b', linewidth=0.7)
@@ -427,16 +487,34 @@ def resample(word1,word2,method,graph = 0, int_type = 'linear'):
         return [word2_restruct,word_interpolated,word1_restruct]
 
 
-def interpolate_signal(signal, final_length, int_type = 'linear'):
+def interpolate_signal(signal, final_length, int_method = 'linear'):
+    """Interpolates given signal to given final_length
+    Args:
+        signal [list]: Signal that is being interpolated
+        final_length [int]: A final length to interpolate signal to
+        int_method [string]: A given method of interpolation, 'linear', 'quadratic', 'cubic' etc. 
+
+    Returns:
+        [list]: An interpolated signal with values in list
+    """
     x = np.r_[0:len(signal)-1:complex(len(signal),1)]
-    f = interpolate.interp1d(x,signal,kind=int_type)
+    f = interpolate.interp1d(x,signal,kind=int_method)
 
     to_interpolate = np.r_[0:len(signal)-1:complex(final_length,1)]
     signal_interpolated = f(to_interpolate)
     return signal_interpolated
 
 
-def compare(word1,word2,dist = 'euclidean'):
+def compare(word1, word2, dist = 'euclidean'):
+    """Counts the distance between 2 3D signals using one of implemented metrics
+    Args:
+        word1 [list]: The first signal for the computation
+        word2 [list]: The second signal for the computation
+        dist [string]: A metrics used for distance computation
+
+    Returns:
+        [double]: The distance between 2 given signals
+    """
     distance = 0
     word1 = np.array([word1[0],word1[1],word1[2]])
     word2 = np.array([word2[0],word2[1],word2[2]])
@@ -546,13 +624,13 @@ if __name__ == '__main__':
         unique_count.sort(key=lambda x: x[1], reverse=True)
         print((unique_count))
 
-    computing_one_word_dtw = True
-    if computing_one_word_dtw:
+    test_dtw_one_word = False
+    if test_dtw_one_word:
         word = 'zitra'
         one_word_dtw(word, path_jointlist, 20, 'softdtw', graph=1)
     
-    resample_test = False
-    if resample_test:
+    test_resample = False
+    if test_resample:
         joint = 5
         word1 = traj[191][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
         word1_meta = meta[191]
@@ -560,23 +638,48 @@ if __name__ == '__main__':
         word2 = traj[700][:, joint, :]
         word2_meta = meta[700]
 
-        [word2_restruct,word_interpolated,word1_restruct] = resample(word2,word1,'interpolation', graph=1 ,int_type = 'cubic')
-        
-    compute_dtw_more_words = False
-    if compute_dtw_more_words:
-        compute_dtw(5,1)
-
-    compare_signals = False
-    if compare_signals:
+        [word2_restruct,word_interpolated,word1_restruct] = resample(word2, word1,'interpolation', 'cubic', graph=1)
+    
+    test_signal_comparison = False
+    if test_signal_comparison:
         joint = 3
         word1 = traj[900][:, joint, :]
-        word1_meta = meta[220]
+        word1_meta = meta[900]
 
         word2 = traj[200][:, joint, :]
         word2_meta = meta[200]
 
-        resample_out = resample(word2,word1,'interpolation',graph=0) #returns reorganized word1 and resampled word2
+        resample_out = resample(word2, word1, 'interpolation', 'linear', graph=0) #returns reorganized word1 and resampled word2
         kind = 'fréchet'
         distance = compare(resample_out[1],resample_out[2], dist = kind)
 
-        print('{} counted over {} and {}: {}'.format(kind, word1_meta[0], word2_meta[0], distance))
+        print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
+
+    compute_dtw_more_words = True
+    if compute_dtw_more_words:
+        
+        alg_type = 'method_combination' # 'dtw', 'softdtw', 'method_combination'
+
+        # Used only if 'method_combination' is selected:
+        resample_type = 'interpolation' # 'interpolation', 'fourier'
+        int_type = 'cubic' # 'linear', 'quadratic', 'cubic'
+        distance_method = 'hamming' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+
+        if alg_type == 'method_combination':
+            start = timer()
+            distance_matrix = compute(-1, alg_type, resample_type, int_type, distance_method, graph = 1)
+            end = timer()
+
+            print('Duration: {}'.format(end-start))
+            pk_out = open("Sign_Language_BP/output_files/{}+{}+{}.pkl".format(int_type, resample_type, distance_method), 'wb')
+            pk.dump(distance_matrix, pk_out)
+            pk_out.close()
+        else:
+            start = timer()
+            distance_matrix = compute(-1, alg_type, graph = 1) # DTW or SoftDTW
+            end = timer()
+
+            print('Duration: {}'.format(end-start))
+            pk_out = open("Sign_Language_BP/output_files/{}.pkl".format(alg_type), 'wb')
+            pk.dump(distance_matrix, pk_out)
+            pk_out.close()

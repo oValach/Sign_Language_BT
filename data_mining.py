@@ -655,8 +655,8 @@ if __name__ == '__main__':
 
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
-    compute_dtw_more_words = True
-    if compute_dtw_more_words:
+    compute_more_words = True
+    if compute_more_words:
         
         alg_type = 'method_combination' # 'dtw', 'softdtw', 'method_combination'
 

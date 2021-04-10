@@ -264,7 +264,7 @@ def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', in
             if i == j:
                 distance[i, j] = 0
             else:
-                if alg_type == 'dtw': #Classic DTW algorithm
+                if alg_type == 'dtw': # Classic DTW algorithm
 
                     words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
                     distance[i, j] = (distance_computation_dtw(words_prepared, 'dtw'))
@@ -273,7 +273,7 @@ def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', in
                     except:
                         pass
 
-                elif alg_type == 'softdtw':#Differentiable SoftDTW version of DTW
+                elif alg_type == 'softdtw': # Differentiable SoftDTW version of DTW
 
                     words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
                     distance[i, j] = (distance_computation_dtw(words_prepared, 'softdtw'))
@@ -282,9 +282,8 @@ def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', in
                     except:
                         pass
 
-                elif alg_type == 'method_combination': #Signal resample and distance computation separately
+                elif alg_type == 'method_combination': # Signal resample and distance computation separately
                     
-                    selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand in jointlist
                     distances_joints = []
 
                     for k in range(len(selected_joints_idxs)):
@@ -662,8 +661,10 @@ if __name__ == '__main__':
 
         # Used only if 'method_combination' is selected:
         resample_type = 'interpolation' # 'interpolation', 'fourier'
-        int_type = 'cubic' # 'linear', 'quadratic', 'cubic'
-        distance_method = 'hamming' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+        int_type = 'linear' # 'linear', 'quadratic', 'cubic'
+        distance_method = 'euclidean' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+
+        selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand in jointlist
 
         if alg_type == 'method_combination':
             start = timer()
@@ -676,7 +677,7 @@ if __name__ == '__main__':
             pk_out.close()
         else:
             start = timer()
-            distance_matrix = compute(-1, alg_type, graph = 1) # DTW or SoftDTW
+            distance_matrix = compute(10, alg_type, graph = 1) # DTW or SoftDTW
             end = timer()
 
             print('Duration: {}'.format(end-start))

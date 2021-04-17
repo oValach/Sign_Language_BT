@@ -255,7 +255,7 @@ def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'l
         print('Computing ... ...')
 
     if word_amount == None: # computes with all words that appears to have more occurences than given limit
-        distance = np.zeros((int(count_limit(occurence_lower_limit)), len(traj)))
+        distance = np.zeros((int(count_limit(occurence_lower_limit)[0]), len(traj)))
     elif word_amount == -1: # computes with all words
         distance = np.zeros((len(traj), len(traj)))
     elif word_amount != None: # computes with given number of words
@@ -556,6 +556,14 @@ def compare(word1, word2, dist = 'euclidean'):
 
 
 def count_limit(limit):
+    """Counts the sum of words instances that appears in more that given number
+    Args:
+        limit [int]: a minimum value for the word to be
+
+    Returns:
+        [int]: The sum of instances of chosen words
+        [dictionary]: The number of instances for each chosen word separately
+    """
     temp = []
     for i in range(len(meta)):
         temp.append(meta[i][0])
@@ -565,7 +573,69 @@ def count_limit(limit):
 
     sum_counts = sum([item for key, item in counts.items() if item > limit])
 
-    return sum_counts
+    return [sum_counts,counts]
+
+
+def analyze_result(method1_matrix, noOfminimuminstances, graph = 0):
+    [noOfWords, words_counts_dict] = count_limit(noOfminimuminstances)
+
+    matrix_chosen = method1_matrix[0:noOfWords]
+
+    #words_data = np.empty(shape=(noOfWords,4), dtype=object)
+
+    matrix_sorted = matrix_chosen.argsort()
+    
+    counts_dict = {}
+    
+    for i in range(noOfWords):
+        top10 = top50 = top100 = top500 = 0
+
+        for j in range(len(matrix_sorted[i])):
+            word_main = meta[i][0]
+            word_compared = meta[matrix_sorted[i][j]][0]
+
+            if word_main == word_compared:
+                if j < 500:
+                    top500+=1
+                    if j < 100:
+                        top100+=1
+                        if j < 50:
+                            top50+=1
+                            if j < 10:
+                                top10+=1
+
+        if not word_main in counts_dict.keys():
+            counts_dict[word_main] = [top10,top50,top100,top500]
+        elif word_main in counts_dict.keys():
+            counts_dict[word_main] =  [sum(x) for x in zip(counts_dict[word_main], [top10,top50,top100,top500])]
+
+        #words_data[i] = [top10,top50,top100,top500]
+
+
+    method_results = [0,0,0,0]
+    for key, val in counts_dict.items():
+        counts_dict[key] = (np.array(val)/words_counts_dict[key]).tolist()
+        for i in range(len(method_results)):
+            method_results[i] = method_results[i] + counts_dict[key][i]
+
+    method_results = np.array(method_results)/len(counts_dict)
+
+    if graph:
+        mpl.style.use('seaborn')
+        graph_data1 = [method_results[0]/10*100,method_results[1]/50*100,method_results[2]/100*100,method_results[3]/500*100]
+        graph_data2 = [100,100,100,100]
+        x = ['10','50','100','500']
+        plt.figure()
+        plt.grid(True)
+        plt.bar(x,graph_data2, color='red', alpha=1, width=0.4, edgecolor='black',linewidth=1)
+        plt.bar(x,graph_data1, color='green', alpha=1, width=0.4, edgecolor='black',linewidth=1)
+        plt.xlabel('Velikost datasetu nejbližších znaků [znak]')
+        plt.ylabel('Shoda znaku se testovaným v daném datasetu [%]')
+        for index,data in enumerate(graph_data1):
+            plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=12), fontweight='bold')
+        plt.show()
+
+
 
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
@@ -641,7 +711,7 @@ if __name__ == '__main__':
 
     test_dtw_one_word = False
     if test_dtw_one_word:
-        word = 'zitra'
+        word = 'bude'
         one_word_dtw(word, path_jointlist, 20, 'softdtw', graph=1)
     
     test_resample = False
@@ -676,8 +746,8 @@ if __name__ == '__main__':
 
         # Used only if 'method_combination' is selected:
         resample_type = 'interpolation' # 'interpolation', 'fourier'
-        int_type = 'cubic' # 'linear', 'quadratic', 'cubic'
-        distance_method = 'euclidean' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+        int_type = 'linear' # 'linear', 'quadratic', 'cubic'
+        distance_method = 'minkowsky' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
 
         if alg_type == 'method_combination':
             start = timer()
@@ -698,7 +768,7 @@ if __name__ == '__main__':
             pk.dump(distance_matrix, pk_out)
             pk_out.close()
 
-    test_interps = True
+    test_interps = False
     if test_interps: # testovaci skript
         with open("Sign_Language_BP/output_files/Interp-Lin,Euclidean/linear+interpolation+euclidean.pkl", 'rb') as pickle_file:
             euclid = pk.load(pickle_file)
@@ -735,4 +805,10 @@ if __name__ == '__main__':
                     print(words)
                     print([euclid[i][item] for item in sorted_eucl[i,j:j+5]])   # print vzdalenostnich hodnot pro dana slova
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
-        print()
+
+    method_analyze = True
+    if method_analyze:
+        with open("Sign_Language_BP/output_files/Interp-Lin,Euclidean/linear+interpolation+euclidean.pkl", 'rb') as pickle_file:
+            DTW = pk.load(pickle_file)
+
+        analyze_result(DTW,9,1)

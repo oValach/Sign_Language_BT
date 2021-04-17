@@ -228,7 +228,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     return bestentered
 
 
-def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0):
+def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -254,9 +254,11 @@ def compute(word_amount, alg_type = 'dtw', resample_method = 'interpolation', in
         print('Distance computation by metrics: {}'.format(distance_method))
         print('Computing ... ...')
 
-    if word_amount == -1:
+    if word_amount == None: # computes with all words that appears to have more occurences than given limit
+        distance = np.zeros((int(count_limit(occurence_lower_limit)), len(traj)))
+    elif word_amount == -1: # computes with all words
         distance = np.zeros((len(traj), len(traj)))
-    else:
+    elif word_amount != None: # computes with given number of words
         distance = np.zeros((int(word_amount), len(traj)))
     
     for i in range(len(distance)):
@@ -552,6 +554,19 @@ def compare(word1, word2, dist = 'euclidean'):
             distance += spatial.distance.euclidean(word1[:,i],word2[:,i])
     return distance
 
+
+def count_limit(limit):
+    temp = []
+    for i in range(len(meta)):
+        temp.append(meta[i][0])
+
+    meta_series = pd.Series(temp)
+    counts = meta_series.value_counts().to_dict()
+
+    sum_counts = sum([item for key, item in counts.items() if item > limit])
+
+    return sum_counts
+
 if __name__ == '__main__':
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
     source_dir = 'Sign_Language_BP/'
@@ -655,19 +670,18 @@ if __name__ == '__main__':
 
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
-    compute_more_words = True
+    compute_more_words = False
     if compute_more_words:
-        
         alg_type = 'method_combination' # 'dtw', 'softdtw', 'method_combination'
 
         # Used only if 'method_combination' is selected:
         resample_type = 'interpolation' # 'interpolation', 'fourier'
         int_type = 'cubic' # 'linear', 'quadratic', 'cubic'
-        distance_method = 'hamming' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+        distance_method = 'euclidean' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
 
         if alg_type == 'method_combination':
             start = timer()
-            distance_matrix = compute(-1, alg_type, resample_type, int_type, distance_method, graph = 1)
+            distance_matrix = compute(alg_type, resample_type, int_type, distance_method, graph = 1, word_amount=-1)
             end = timer()
 
             print('Duration: {}'.format(end-start))
@@ -676,10 +690,49 @@ if __name__ == '__main__':
             pk_out.close()
         else:
             start = timer()
-            distance_matrix = compute(-1, alg_type, graph = 1) # DTW or SoftDTW
+            distance_matrix = compute(alg_type, graph = 1, word_amount=-1) # DTW or SoftDTW
             end = timer()
 
             print('Duration: {}'.format(end-start))
             pk_out = open("Sign_Language_BP/output_files/{}.pkl".format(alg_type), 'wb')
             pk.dump(distance_matrix, pk_out)
             pk_out.close()
+
+    test_interps = True
+    if test_interps: # testovaci skript
+        with open("Sign_Language_BP/output_files/Interp-Lin,Euclidean/linear+interpolation+euclidean.pkl", 'rb') as pickle_file:
+            euclid = pk.load(pickle_file)
+        with open("Sign_Language_BP/output_files/Interp-Quadr,Euclidean/quadratic+interpolation+euclidean.pkl", 'rb') as pickle_file:
+            quadr = pk.load(pickle_file)
+        with open("Sign_Language_BP/output_files/Interp-Cubic,Euclidean/cubic+interpolation+euclidean.pkl", 'rb') as pickle_file:
+            cubic = pk.load(pickle_file)
+
+        sorted_eucl = euclid.argsort() # serazene 2D pole vzdalenosti s indexy
+        sorted_quadr = quadr.argsort()
+        sorted_cubic = cubic.argsort()
+
+        euclVSquadr = sorted_eucl==sorted_quadr # porovnani 2 metod vuci sobe, True/False matice
+        euclVScubic = sorted_eucl==sorted_cubic
+        quadrVScubic = sorted_quadr==sorted_cubic
+
+        unique, euclVSquadrCounts = np.unique(euclVSquadr, return_counts=True) # pocet shod a rozdilu dvou danych metod 
+        dict(zip(unique, euclVSquadrCounts)) # 27 612 False, 972 388 True
+
+        unique, euclVScubicCounts = np.unique(euclVScubic, return_counts=True)
+        dict(zip(unique, euclVScubicCounts)) # 27 628 False, 972 372 True
+
+        unique, quadrVScubicCounts = np.unique(quadrVScubic, return_counts=True)
+        dict(zip(unique, quadrVScubicCounts)) # 736 False, 999 264 True
+
+        for i in range(len(euclVSquadr)): # hledam mista, kde se vyskytuje vice rozdilu za sebou a zjistuji, ze jsou to vetsinou pouze prehozene dve slova vuci sobe
+            for j in range(len(euclVSquadr[i])):
+                if euclVSquadr[i,j] == False and euclVSquadr[i,j-1] == False and euclVSquadr[i,j+1] == False:# and euclVSquadr[i,j+2] == False and euclVSquadr[i,j+3] == False and euclVSquadr[i,j+4] == False:
+                    print(sorted_eucl[i,j:j+5])     # print oblasti indexu s prohozenymi znaky
+                    print(sorted_quadr[i,j:j+5])
+                    words = [meta[item][0] for item in sorted_eucl[i,j:j+5]] 
+                    print(words)                    # print vyznamu prohozenych znaku
+                    words = [meta[item][0] for item in sorted_quadr[i,j:j+5]]
+                    print(words)
+                    print([euclid[i][item] for item in sorted_eucl[i,j:j+5]])   # print vzdalenostnich hodnot pro dana slova
+                    print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
+        print()

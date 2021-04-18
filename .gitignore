@@ -13,3 +13,4 @@ source_words/
 bvh_dict/
 data/meta.pkl
 data/traj.pkl
+output_files/final/

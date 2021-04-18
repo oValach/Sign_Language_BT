@@ -50,8 +50,8 @@ def create_trajectory_matrix(dictionary_data):
             if 'predlozky' in npy_name:  # bastl ! oprava rozdilneho nazvu souboru "predlozky_a_spojky" -> "predlozky_spojky"
                 npy_name = npy_name.replace('_a_', '_')
 
-            # tmp_trajectory = np.load(os.path.join(glo_dir, os.path.splitext(item['src_mocap'])[0] + '.npy'))
-            tmp_trajectory = np.load(os.path.join(glo_dir, npy_name))[anot[0]:anot[1], :, :]
+            # tmp_trajectory = np.load(os.path.join(source_dir, os.path.splitext(item['src_mocap'])[0] + '.npy'))
+            tmp_trajectory = np.load(os.path.join(source_dir, npy_name))[anot[0]:anot[1], :, :]
             metadata_list.append([item['sign_id'], item['src_mocap'], item['annotation_Filip_bvh_frame']])
             trajectory_list.append(tmp_trajectory)
             print('{:.2f} %'.format(float(i) / len(dictionary_data) * 100))
@@ -161,7 +161,7 @@ def get_jointlist(path_jointlist):
     joints = file_joints.readlines()
     joints = [f.rstrip() for f in joints]
     return joints
-    
+
 
 def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph = 1):
     """Computes DTW distance between 1 word and all other words
@@ -228,7 +228,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     return bestentered
 
 
-def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
+def compute(path_chosen_joints, graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -242,17 +242,97 @@ def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'l
         [list]: A list of all distances between the given number of words and all others
     """
 
-    #Check of methods and metrics used
-    if alg_type == 'dtw':
-        print('Computing DTW ... ...')
-    elif alg_type == 'softdtw':
-        print('Computing SoftDTW ... ...')
-    else:
-        print('Resample method: {}'.format(resample_method))
-        if resample_method == 'interpolation':
-            print('Interpolation type: {}'.format(int_method))
-        print('Distance computation by metrics: {}'.format(distance_method))
-        print('Computing ... ...')
+    # GUI to choose used method and metric
+    print('CHOOSE ALGORITHM TYPE:')
+    while(True):
+        alg_type = input('Enter 1: DTW, 2: SoftDTW, 3: Resample and comparison: ')
+
+        if alg_type == '1':
+            print('Computing DTW ... ...')
+            alg_type = 'dtw'
+            break
+
+        elif alg_type == '2':
+            print('Computing SoftDTW ... ...')
+            alg_type = 'softdtw'
+            break
+
+        elif alg_type == '3':
+            alg_type = 'method_combination'
+            print('CHOOSE RESAMPLE METHOD:')
+            while(True):
+                resample_method = input('Enter 1: Interpolation, 2: Fourier transform: ')
+
+                if resample_method == '1':
+                    resample_method = 'interpolation'
+                    print('CHOOSE INTERPOLATION METHOD:')
+                    while(True):
+                        int_method = input('Enter 1: Linear, 2: Quadratic, 3: Cubic: ')
+
+                        if int_method == '1':
+                            int_method = 'linear'
+                            break
+                        elif int_method == '2':
+                            int_method = 'quadratic'
+                            break
+                        elif int_method == '3':
+                            int_method = 'cubic'
+                            break
+                        else:
+                            print('Please enter one of the offered options.')
+                    break
+                elif resample_method == '2':
+                    resample_method = 'fourier'
+                    break
+                else:
+                    print('Please enter one of the offered options.')
+            print('CHOOSE METRICS:')
+            while(True):
+                distance_method = input('Enter 1: Euclidean\n 2: Hamming\n 3: Minkowsky\n 4: Mahalanobis\n 5: Canberra\n 6: Chebychev\n 7: BrayCurtis\n 8:Pearson correlation coefficient\n 9: Correlation distance\n 10: Area between curves\n')
+                if distance_method == '1':
+                    distance_method = 'euclidean'
+                    break
+                elif distance_method == '2':
+                    distance_method = 'hamming'
+                    break
+                elif distance_method == '3':
+                    distance_method = 'minkowsky'
+                    break
+                elif distance_method == '4':
+                    distance_method = 'mahalanobis'
+                    break
+                elif distance_method == '5':
+                    distance_method = 'canberra'
+                    break
+                elif distance_method == '6':
+                    distance_method = 'chebychev'
+                    break
+                elif distance_method == '7':
+                    distance_method = 'braycurtis'
+                    break
+                elif distance_method == '8':
+                    distance_method = 'pearson'
+                    break
+                elif distance_method == '9':
+                    distance_method = 'correlationDistance'
+                    break
+                elif distance_method == '10':
+                    distance_method = 'area'
+                    break
+                else:
+                    print('Please enter one of the offered options.')
+            
+            if resample_method == 'interpolation':
+                clear = lambda: os.system('cls')
+                clear()
+                print('Computing {} {}, {} ... ...'.format(int_method, resample_method, distance_method))
+            elif resample_method == 'fourier':
+                clear = lambda: os.system('cls')
+                clear()
+                print('Computing {}, {} ... ...'.format(resample_method, distance_method))
+            break
+        else:
+            print('Please enter one of the offered options.')
 
     if word_amount == None: # computes with all words that appears to have more occurences than given limit
         distance = np.zeros((int(count_limit(occurence_lower_limit)[0]), len(traj)))
@@ -275,7 +355,7 @@ def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'l
                     except:
                         pass
 
-                elif alg_type == 'softdtw':#Differentiable SoftDTW version of DTW
+                elif alg_type == 'softdtw':# Differentiable SoftDTW version of DTW
 
                     words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
                     distance[i, j] = (distance_computation_dtw(words_prepared, 'softdtw'))
@@ -284,15 +364,24 @@ def compute(alg_type = 'dtw', resample_method = 'interpolation', int_method = 'l
                     except:
                         pass
 
-                elif alg_type == 'method_combination': #Signal resample and distance computation separately
+                elif alg_type == 'method_combination': # Signal resample and distance computation separately
                     
-                    selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand in jointlist
+                    with open(path_chosen_joints, 'r') as pth: # loads chosen joints idxs from the chosen_joints.txt file
+                        selected_joints_idxs = pth.readlines()
+                    selected_joints_idxs = [int(item.rstrip("\n")) for item in selected_joints_idxs]
+
+                    #selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand
                     distances_joints = []
 
                     for k in range(len(selected_joints_idxs)):
-                        resample_out = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], resample_method, int_method, graph=0)
-                        one_joint_distance = (compare(resample_out[1],resample_out[2], dist = distance_method))
-                        distances_joints.append(one_joint_distance)
+                        if resample_method == 'interpolation':
+                            resample_out = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], resample_method, int_method, graph=0)
+                            one_joint_distance = compare(resample_out[1],resample_out[2], dist = distance_method)
+                            distances_joints.append(one_joint_distance)
+                        else:
+                            resample_out = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], resample_method, graph=0)
+                            one_joint_distance = compare(resample_out[1],resample_out[2], dist = distance_method)
+                            distances_joints.append(one_joint_distance)
 
                     joints_distance_mean = np.mean(distances_joints)
                     distance[i, j] = joints_distance_mean
@@ -547,7 +636,7 @@ def compare(word1, word2, dist = 'euclidean'):
     elif dist == 'chebyshev':
         for i in range(len(word1[1])):
             distance += spatial.distance.chebyshev(word1[:,i],word2[:,i])
-    elif dist =='fréchet':
+    elif dist =='area':
         distance = similaritymeasures.area_between_two_curves(word1, word2)
     else:
         for i in range(len(word1[1])):
@@ -638,42 +727,55 @@ def analyze_result(method1_matrix, noOfminimuminstances, graph = 0):
 
 
 if __name__ == '__main__':
+    """
     #source_dir = '/home/jedle/data/Sign-Language/_source_clean/'
-    source_dir = 'Sign_Language_BP/'
-    # bvh_dir = os.path.join(source_dir, 'bvh/')  # all bvh files takes and dictionaries
+    #bvh_dir = os.path.join(source_dir, 'bvh/')  
     bvh_dir = 'Sign_Language_BP/data_bvh/'
     bvh_dict = 'Sign_Language_BP/bvh_dict/'
-    #glo_dir = 'source_data/'
-    glo_dir = 'Sign_Language_BP/source_data/'
-    #word_dir = 'source_words/'
-    word_dir = 'Sign_Language_BP/source_words/'
+    #source_dir = 'source_data/'
+    source_dir = 'Sign_Language_BP/source_data/'
     #path_jointlist = 'data/joint_list.txt'
     path_jointlist = 'Sign_Language_BP/data/joint_list.txt'
     #path_metadata = 'data/meta.pkl'
     path_metadata = 'Sign_Language_BP/data/meta.pkl'
     #path_trajectory = 'data/traj.pkl'
     path_trajectory ='Sign_Language_BP/data/traj.pkl'
-    #dict_file = os.path.join(source_dir, 'ultimate_dictionary2.txt')
-    dict_file = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
+    #path_dictionary = os.path.join(source_dir, 'ultimate_dictionary2.txt')
+    path_dictionary = 'Sign_Language_BP/data/ultimate_dictionary2.txt'
+    path_chosen_joints = 'Sign_Language_BP/data/chosen_joints.txt'
+    """
+
+    paths = 'Sign_Language_BP/data/paths.txt'
+    with open(paths, 'r') as pth:
+        paths_list = pth.readlines()
+    
+    bvh_dir = paths_list[0].rstrip("\n") # all bvh files takes and dictionaries
+    bvh_dict = paths_list[1].rstrip("\n") # bvh files with separate words signed
+    source_dir = paths_list[2].rstrip("\n") # data converted from angular to global positions
+    path_jointlist = paths_list[3].rstrip("\n") # path to the joint_list.txt file 
+    path_chosen_joints = paths_list[4].rstrip("\n") # path to the chosen joints indexes from joint_list.txt file
+    path_dictionary = paths_list[5].rstrip("\n") # path to the ultimate_dictionary2.txt file
+    path_metadata = paths_list[6].rstrip("\n") # path to the meta.pkl file
+    path_trajectory = paths_list[7] # path to the traj.pkl file
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
     if mine:
-        mine_data(bvh_dir, glo_dir)
+        mine_data(bvh_dir, source_dir)
 
     # creates sign numpy dictionary
     create = False
     if create:
-        dict_items = SL_dict.read_dictionary(dict_file, 'dictionary_items')
-        dict_takes = SL_dict.read_dictionary(dict_file, 'dictionary_takes')
+        dict_items = SL_dict.read_dictionary(path_dictionary, 'dictionary_items')
+        dict_takes = SL_dict.read_dictionary(path_dictionary, 'dictionary_takes')
         create_trajectory_matrix(dict_items + dict_takes)
 
     with open(path_jointlist, 'r') as f:
-        joint_list = f.readlines()      # to je jenom pořadí markerů
+        joint_list = f.readlines()      # the list of markers (tracked body parts)
     with open(path_metadata, 'rb') as pf:
-        meta = pk.load(pf)              # metadata: nazev, puvod data (soubor), anotace
+        meta = pk.load(pf)              # metadata: meaning, the initial file, anotation
     with open(path_trajectory, 'rb') as pf:
-        traj = pk.load(pf)              # trajektorie [item, frame, joint, channel]
+        traj = pk.load(pf)              # trajektory [item, frame, joint, channel]
 
     flexing = False
     if flexing:  # access to data examples
@@ -735,38 +837,21 @@ if __name__ == '__main__':
         word2_meta = meta[200]
 
         resample_out = resample(word2, word1, 'interpolation', 'linear', graph=0) #returns reorganized word1 and resampled word2
-        kind = 'fréchet'
+        kind = 'area'
         distance = compare(resample_out[1],resample_out[2], dist = kind)
 
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
-    compute_more_words = False
+    compute_more_words = True
     if compute_more_words:
-        alg_type = 'method_combination' # 'dtw', 'softdtw', 'method_combination'
 
-        # Used only if 'method_combination' is selected:
-        resample_type = 'interpolation' # 'interpolation', 'fourier'
-        int_type = 'linear' # 'linear', 'quadratic', 'cubic'
-        distance_method = 'minkowsky' # 'euclidean', 'hamming', 'minkowsky', 'mahalanobis', 'pearson', 'correlationDistance', 'canberra', 'braycurtis', 'chebychev', 'fréchet'
+        start = timer()
+        distance_matrix = compute(path_chosen_joints, graph = 1, word_amount=-1)
+        end = timer()
 
-        if alg_type == 'method_combination':
-            start = timer()
-            distance_matrix = compute(alg_type, resample_type, int_type, distance_method, graph = 1, word_amount=-1)
-            end = timer()
-
-            print('Duration: {}'.format(end-start))
-            pk_out = open("Sign_Language_BP/output_files/{}+{}+{}.pkl".format(int_type, resample_type, distance_method), 'wb')
+        print('Duration: {}'.format(end-start))
+        with open("Sign_Language_BP/output_files/out_matrix.pkl", 'wb') as pk_out:
             pk.dump(distance_matrix, pk_out)
-            pk_out.close()
-        else:
-            start = timer()
-            distance_matrix = compute(alg_type, graph = 1, word_amount=-1) # DTW or SoftDTW
-            end = timer()
-
-            print('Duration: {}'.format(end-start))
-            pk_out = open("Sign_Language_BP/output_files/{}.pkl".format(alg_type), 'wb')
-            pk.dump(distance_matrix, pk_out)
-            pk_out.close()
 
     test_interps = False
     if test_interps: # testovaci skript
@@ -806,9 +891,10 @@ if __name__ == '__main__':
                     print([euclid[i][item] for item in sorted_eucl[i,j:j+5]])   # print vzdalenostnich hodnot pro dana slova
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
-        with open("Sign_Language_BP/output_files/Interp-Lin,Euclidean/linear+interpolation+euclidean.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/DTW/DTW.pkl", 'rb') as pickle_file:
             DTW = pk.load(pickle_file)
 
-        analyze_result(DTW,9,1)
+        minOf_instances = 9
+        analyze_result(DTW, minOf_instances, graph=1)

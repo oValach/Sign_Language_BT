@@ -782,7 +782,7 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
 if __name__ == '__main__':
 
-    paths = 'Sign_Language_BP/data/paths.txt'
+    paths = 'data/paths.txt'
     with open(paths, 'r') as pth:
         paths_list = pth.readlines()
     

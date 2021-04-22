@@ -782,7 +782,7 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
 if __name__ == '__main__':
 
-    paths = 'data/paths.txt'
+    paths = 'Sign_Language_BP/data/paths.txt'
     with open(paths, 'r') as pth:
         paths_list = pth.readlines()
     
@@ -931,7 +931,7 @@ if __name__ == '__main__':
         analyze_result(DTW, minOf_instances, graph=1)
 
     # Compute one algorithm option on optional data size
-    compute_main = False
+    compute_main = True
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'

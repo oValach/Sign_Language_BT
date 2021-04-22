@@ -14,7 +14,7 @@ DATADIR="/storage/plzen1/home/$LOGNAME/Sign_Language_BP/"
 # nacteni aplikacniho modulu, ktery zpristupni aplikaci Gaussian verze 3
 # module add g03
 
-echo "job: $PBS_JOBID running on: `uname -n`" >result # just an example computation
+echo "job: $PBS_JOBID running on: `uname -n`"
 
 #SOURCE="${BASH_SOURCE[0]}"
 #DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"

@@ -139,7 +139,6 @@ def distance_computation_dtw(data_prepared, alg_type):
     for _, val in data_prepared.items():
 
         if alg_type == 'softdtw':
-            print(np.shape(val[0]))
             D = SquaredEuclidean(val[0].T, val[1].T)
             sdtw = SoftDTW(D, gamma=1.0)
             dist = sdtw.compute()
@@ -192,8 +191,6 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
-        print(np.shape(traj[i]))
-        print(np.shape(word_traj))
         words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
         distance[i] = (distance_computation_dtw(words_prepared, alg_type))
 

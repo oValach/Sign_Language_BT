@@ -36,7 +36,7 @@ export PATH=/storage/plzen1/home/$LOGNAME/miniconda3/bin:$PATH
 
 #conda activate tf_gpu
 source activate BPenv
-cd /storage/plzen1/home/valacho/Sign_Language_BP/
+cd /storage/plzen1/home/valacho/
 
 # python -m scaffan set --common-spreadsheet-file /storage/plzen1/home/$LOGNAME/projects/scaffan/experiments/metacentrum/SA_experiments.xlsx
 #python /storage/plzen1/home/javorek/bodyposition/devel/metacentrum/metasagittal.py > /storage/plzen1/home/javorek/meta_sdf_output_sagittal.txt

@@ -4,7 +4,7 @@
 # Please note that only one select= argument is allowed at a time.
 
 # add to qsub with:
-# qsub metaSDF_sagittal.sh
+# qsub metaSL.sh
 
 # nastaveni domovskeho adresare, v promenne $LOGNAME je ulozeno vase prihlasovaci jmeno
 DATADIR="/storage/plzen1/home/$LOGNAME/Sign_Language_BP/"

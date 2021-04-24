@@ -1,0 +1,8 @@
+data_bvh/
+bvh_dict/
+source_data/
+data/joint_list.txt
+data/chosen_joints.txt
+data/ultimate_dictionary2.txt
+data/meta.pkl
+data/traj.pkl

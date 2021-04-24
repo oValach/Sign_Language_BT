@@ -728,34 +728,39 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
     counts_dict = {}
     
     for i in range(noOfWords):
-        tops = [0,0,0,0]
-        top_counts = [1,3,5,10]
+        top_counts = [1,3,5,10,20,30]
+        tops = np.zeros(len(top_counts))
 
-        for j in range(len(matrix_sorted[i])):
+        tested = matrix_sorted[i].tolist()
+        if tested[0] == i: # pop if first is the same instance to each other
+            tested.pop(0)
+
+        for j in range(len(tested)):
             word_main = meta[i][0]
-            word_compared = meta[matrix_sorted[i][j]][0]
-
-            if method_matrix[matrix_sorted[i][j],i] == 0: # skip computing the same instance to each other value
-                continue
+            word_compared = meta[tested[j]][0]
 
             if word_main == word_compared:
-                if j < top_counts[3]:
-                    tops[3]+=1
-                    if j < top_counts[2]:
-                        tops[2]+=1
-                        if j < top_counts[1]:
-                            tops[1]+=1
-                            if j < top_counts[0]:
-                                tops[0]+=1
+                if j < top_counts[5]:
+                    tops[5]+=1
+                    if j < top_counts[4]:
+                        tops[4]+=1
+                        if j < top_counts[3]:
+                            tops[3]+=1
+                            if j < top_counts[2]:
+                                tops[2]+=1
+                                if j < top_counts[1]:
+                                    tops[1]+=1
+                                    if j < top_counts[0]:
+                                        tops[0]+=1
 
         if not word_main in counts_dict.keys():
             counts_dict[word_main] = tops
         elif word_main in counts_dict.keys():
             counts_dict[word_main] =  [sum(x) for x in zip(counts_dict[word_main], tops)]
 
-        #words_data[i] = [top10,top50,top100,top500]
+        #words_data[i] = tops
 
-    method_results = [0,0,0,0]
+    method_results = np.zeros(len(top_counts))
     for key, val in counts_dict.items():
         counts_dict[key] = (np.array(val)/words_counts_dict[key]).tolist()
         for i in range(len(method_results)):
@@ -765,9 +770,13 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
     if graph:
         mpl.style.use('seaborn')
-        graph_data1 = [method_results[0]/top_counts[0]*100,method_results[1]/top_counts[1]*100,method_results[2]/top_counts[2]*100,method_results[3]/top_counts[3]*100]
-        graph_data2 = [100,100,100,100]
-        x = ['1','3','5','10']
+        graph_data1 = []
+        graph_data2 = []
+        x = []
+        for l in range(len(top_counts)):
+            graph_data1.append(method_results[l]/top_counts[l]*100)
+            graph_data2.append(100)
+            x.append(str(top_counts[l]))
         plt.figure()
         plt.grid(True)
         plt.bar(x,graph_data2, color='red', alpha=1, width=0.4, edgecolor='black', linewidth=1)
@@ -775,14 +784,16 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
         plt.xlabel('Velikost datasetu nejbližších znaků [znak]')
         plt.ylabel('Shoda znaku se testovaným v daném datasetu [%]')
         for index,data in enumerate(graph_data1):
-            plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=12), fontweight='bold')
+            plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=11), fontweight='bold')
+        plt.legend(['Rozdíl významu', 'Shoda významu'], loc='upper right')
         plt.show()
-
 
 
 if __name__ == '__main__':
 
-    paths = 'data/paths.txt'
+    #paths = 'data/paths.txt' # for metacentrum calculations
+    paths = 'Sign_Language_BP/data/paths.txt'
+
     with open(paths, 'r') as pth:
         paths_list = pth.readlines()
     
@@ -922,16 +933,16 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Display a correctness histogram of one method result
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
-        with open("Sign_Language_BP/output_files/final/SoftDtw/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/DTW/out_matrix.pkl", 'rb') as pickle_file:
             DTW = pk.load(pickle_file)
 
         minOf_instances = 20
         analyze_result(DTW, minOf_instances, graph=1)
 
     # Compute one algorithm option on optional data size
-    compute_main = True
+    compute_main = False
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'
@@ -946,3 +957,9 @@ if __name__ == '__main__':
         distance_method = 'euclidean'
         start = timer()
         distance_matrix = compute(path_chosen_joints, alg_type=alg_type, order='toLonger', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
+
+    test = False
+    if test:
+        print(meta[165])
+        print(meta[189])
+        print(len(meta))

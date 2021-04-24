@@ -1,8 +1,8 @@
-data_bvh/
-bvh_dict/
-source_data/
-data/joint_list.txt
-data/chosen_joints.txt
-data/ultimate_dictionary2.txt
-data/meta.pkl
-data/traj.pkl
+Sign_Language_BP/data_bvh/
+Sign_Language_BP/bvh_dict/
+Sign_Language_BP/source_data/
+Sign_Language_BP/data/joint_list.txt
+Sign_Language_BP/data/chosen_joints.txt
+Sign_Language_BP/data/ultimate_dictionary2.txt
+Sign_Language_BP/data/meta.pkl
+Sign_Language_BP/data/traj.pkl

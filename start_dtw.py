@@ -6,4 +6,4 @@ bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,pa
 
 alg_type = 'dtw'
 
-distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, graph = 1, word_amount=1)
+distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, graph = 1, word_amount=-1)

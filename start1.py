@@ -11,4 +11,4 @@ distance_method = 'euclidean'
 order = 'toLonger'
 
 distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, 
-    resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=1)
+    resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

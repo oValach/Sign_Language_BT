@@ -19,9 +19,11 @@ from sklearn.metrics.pairwise import manhattan_distances
 from timeit import default_timer as timer
 
 def load(paths):
-
-    with open(paths, 'r') as pth:
-        paths_list = pth.readlines()
+    try:
+        with open(paths, 'r') as pth:
+            paths_list = pth.readlines()
+    except:
+        print('Path list directory not found.')
 
     bvh_dir = paths_list[0].rstrip("\n") # all bvh files takes and dictionaries
     bvh_dict = paths_list[1].rstrip("\n") # bvh files with separate words signed
@@ -30,7 +32,8 @@ def load(paths):
     path_chosen_joints = paths_list[4].rstrip("\n") # path to the chosen joints indexes from joint_list.txt file
     path_dictionary = paths_list[5].rstrip("\n") # path to the ultimate_dictionary2.txt file
     path_metadata = paths_list[6].rstrip("\n") # path to the meta.pkl file
-    path_trajectory = paths_list[7] # path to the traj.pkl file
+    path_trajectory = paths_list[7].rstrip("\n") # path to the traj.pkl file
+    path_output = paths_list[8] # path to the output_files folder
 
     with open(path_jointlist, 'r') as f:
         joint_list = f.readlines()      # the list of markers (tracked body parts)
@@ -42,7 +45,7 @@ def load(paths):
     with open(path_trajectory, 'rb') as pf:
         traj = pk.load(pf)              # trajektory [item, frame, joint, channel]
 
-    return bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,joint_list,meta,traj
+    return bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,path_output,joint_list,meta,traj
 
 
 def mine_data(in_directory, out_directory):
@@ -282,7 +285,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     return bestentered
 
 
-def compute(path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
+def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -399,6 +402,9 @@ def compute(path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notI
 
     start = timer()
     for i in range(len(distance)):
+        if (i+1)%100 == 0:
+            print_time = timer()
+            print('Currently computing {}. row of distance matrix, time: {}'.format(i+1,print_time))
         for j in range(len(distance[0])):
             if i == j:
                 distance[i, j] = 0
@@ -427,7 +433,7 @@ def compute(path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notI
                         dist_output = compare(resampled_trajectories, dist = distance_method)
 
                     elif resample_method == 'fourier':
-                        prepared_trajectories = prepare_trajectories(B, C, path_chosen_joints)
+                        prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
                         resampled_trajectories = resample(path_chosen_joints, prepared_trajectories, order, resample_method, graph=0)
                         dist_output = compare(resampled_trajectories, dist = distance_method)
 
@@ -445,17 +451,31 @@ def compute(path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notI
     # Save output data, graph and time info
     end = timer()
     time = end-start
-    with open("Sign_Language_BP/output_files/time_{}_{}.txt".format(order,distance_method),"w") as file:
-        file.write(str(time))
-    with open("Sign_Language_BP/output_files/out_matrix_{}_{}.pkl".format(order,distance_method), 'wb') as pk_out:
-        pk.dump(distance, pk_out)
 
-    if graph:
-        plt.imshow(distance, cmap='hot', interpolation='nearest')
-        plt.colorbar()
-        plt.savefig('Sign_Language_BP/output_files/Figure_{}_{}.eps'.format(order, distance_method), dpi=300)
-        plt.savefig('Sign_Language_BP/output_files/Figure_{}_{}.png'.format(order, distance_method), dpi=300)
+    if (alg_type == 'dtw') or (alg_type == 'softdtw'):
+        with open(os.path.join(path_output, 'time_{}.txt'.format(alg_type)),"w") as file:
+            file.write(str(time))
+        with open(os.path.join(path_output, 'out_matrix_{}.pkl'.format(alg_type)), 'wb') as pk_out:
+            pk.dump(distance, pk_out)
 
+        if graph:
+            plt.imshow(distance, cmap='hot', interpolation='nearest')
+            plt.colorbar()
+            plt.savefig(os.path.join(path_output, 'Figure_{}.eps'.format(alg_type)), dpi=300)
+            plt.savefig(os.path.join(path_output, 'Figure_{}.png'.format(alg_type)), dpi=300)
+    else:
+        if resample_method == 'fourier': # If the Fourier transform is computed in the name of output file will be fourier, else there will be the type of interpolation
+            int_method = 'fourier'
+        with open(os.path.join(path_output, 'time_{}_{}_{}.txt'.format(int_method, distance_method, order)),"w") as file:
+            file.write(str(time))
+        with open(os.path.join(path_output, 'out_matrix_{}_{}_{}.pkl'.format(int_method, distance_method, order)), 'wb') as pk_out:
+            pk.dump(distance, pk_out)
+
+        if graph:
+            plt.imshow(distance, cmap='hot', interpolation='nearest')
+            plt.colorbar()
+            plt.savefig(os.path.join(path_output, 'Figure_{}_{}_{}.eps'.format(int_method, distance_method, order)), dpi=300)
+            plt.savefig(os.path.join(path_output, 'Figure_{}_{}_{}.png'.format(int_method, distance_method, order)), dpi=300)
     return distance
 
 
@@ -496,7 +516,10 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             if len_words[0] < len_words[1]:
                 word_to_resample = 1
                 word_second = 0
-        
+        else:
+            word_to_resample = 0
+            word_second = 1
+
         # Computation
         for key, val in data_prepared.items():
             item_new = np.zeros(shape=(2,3,len_words[word_second]))
@@ -569,7 +592,10 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             if len_words[0] < len_words[1]:
                 word_to_resample = 1
                 word_second = 0
-        
+        else:
+            word_to_resample = 0
+            word_second = 1
+            
         # Computation
         for key, val in data_prepared.items():
             item_new = np.zeros(shape=(2,3,len_words[word_second]))
@@ -802,7 +828,8 @@ if __name__ == '__main__':
     path_chosen_joints = paths_list[4].rstrip("\n") # path to the chosen joints indexes from joint_list.txt file
     path_dictionary = paths_list[5].rstrip("\n") # path to the ultimate_dictionary2.txt file
     path_metadata = paths_list[6].rstrip("\n") # path to the meta.pkl file
-    path_trajectory = paths_list[7] # path to the traj.pkl file
+    path_trajectory = paths_list[7].rstrip("\n") # path to the traj.pkl file
+    path_output = paths_list[8] # path to the output_files folder
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
@@ -948,4 +975,4 @@ if __name__ == '__main__':
         int_method = 'linear'
         distance_method = 'euclidean'
         start = timer()
-        distance_matrix = compute(path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
+        distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

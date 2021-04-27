@@ -18,6 +18,32 @@ from sdtw.distance import SquaredEuclidean
 from sklearn.metrics.pairwise import manhattan_distances
 from timeit import default_timer as timer
 
+def load(paths):
+
+    with open(paths, 'r') as pth:
+        paths_list = pth.readlines()
+
+    bvh_dir = paths_list[0].rstrip("\n") # all bvh files takes and dictionaries
+    bvh_dict = paths_list[1].rstrip("\n") # bvh files with separate words signed
+    source_dir = paths_list[2].rstrip("\n") # data converted from angular to global positions
+    path_jointlist = paths_list[3].rstrip("\n") # path to the joint_list.txt file 
+    path_chosen_joints = paths_list[4].rstrip("\n") # path to the chosen joints indexes from joint_list.txt file
+    path_dictionary = paths_list[5].rstrip("\n") # path to the ultimate_dictionary2.txt file
+    path_metadata = paths_list[6].rstrip("\n") # path to the meta.pkl file
+    path_trajectory = paths_list[7] # path to the traj.pkl file
+
+    with open(path_jointlist, 'r') as f:
+        joint_list = f.readlines()      # the list of markers (tracked body parts)
+    for i in range(len(joint_list)):
+        joint_list[i] = joint_list[i].rstrip("\n")
+
+    with open(path_metadata, 'rb') as pf:
+        meta = pk.load(pf)              # metadata: meaning, the initial file, anotation
+    with open(path_trajectory, 'rb') as pf:
+        traj = pk.load(pf)              # trajektory [item, frame, joint, channel]
+
+    return bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,joint_list,meta,traj
+
 
 def mine_data(in_directory, out_directory):
     """
@@ -256,7 +282,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     return bestentered
 
 
-def compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
+def compute(path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -397,13 +423,13 @@ def compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type = 'dtw
 
                     if resample_method == 'interpolation':
                         prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
-                        _,B,C = resample(prepared_trajectories, order, resample_method, int_method, graph=0)
-                        dist_output = compare(prepared_trajectories, dist = distance_method)
+                        resampled_trajectories = resample(path_chosen_joints, prepared_trajectories, order, resample_method, int_method, graph=0)
+                        dist_output = compare(resampled_trajectories, dist = distance_method)
 
                     elif resample_method == 'fourier':
                         prepared_trajectories = prepare_trajectories(B, C, path_chosen_joints)
-                        _,B,C = resample(prepared_trajectories, order, resample_method, graph=0)
-                        dist_output = compare(prepared_trajectories, dist = distance_method)
+                        resampled_trajectories = resample(path_chosen_joints, prepared_trajectories, order, resample_method, graph=0)
+                        dist_output = compare(resampled_trajectories, dist = distance_method)
 
                     else:
                         print('Wrong resample method entered.')
@@ -433,7 +459,7 @@ def compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type = 'dtw
     return distance
 
 
-def resample(data_prepared, order = 'notImportant', method = 'interpolation', int_method = 'linear', graph = 0):
+def resample(path_chosen_joints, data_prepared, order = 'notImportant', method = 'interpolation', int_method = 'linear', graph = 0):
     """Resamples word2 signal to the length of the word1 signal
     Args:
         data_prepared [dictionary]: prepared data from prepare_trajectories fcn
@@ -847,7 +873,7 @@ if __name__ == '__main__':
         word2 = traj[250]
         word2_meta = meta[250]
         prepared_trajectories = prepare_trajectories(word1,word2,path_chosen_joints)
-        resample_out = resample(prepared_trajectories, 'toLonger', 'interpolation', 'cubic', graph=1)
+        resample_out = resample(path_chosen_joints, prepared_trajectories, 'toLonger', 'interpolation', 'cubic', graph=1)
 
     # Testing fcn of signal comparison
     test_signal_comparison = False
@@ -860,7 +886,7 @@ if __name__ == '__main__':
         word2_meta = meta[200]
 
         prepared_trajectories = prepare_trajectories(word1, word2, path_chosen_joints)
-        resample_out = resample(prepared_trajectories, 'toShorter', 'interpolation', 'linear', graph=0)
+        resample_out = resample(path_chosen_joints, prepared_trajectories, 'toShorter', 'interpolation', 'linear', graph=0)
         kind = 'chebyshev'
         distance = compare(resample_out, dist = kind)
 
@@ -922,4 +948,4 @@ if __name__ == '__main__':
         int_method = 'linear'
         distance_method = 'euclidean'
         start = timer()
-        distance_matrix = compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
+        distance_matrix = compute(path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

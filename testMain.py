@@ -1,4 +1,5 @@
 from lib.BP_lib import *
+from data_mining import *
 from lib import data_comp
 from lib import BP_lib
 from timeit import default_timer as timer
@@ -33,7 +34,7 @@ if __name__ == "__main__":
         for key, val in dtw_out[0].items():
             print('')
 
-    meta_traj_export = True
+    meta_traj_export = False
     if meta_traj_export:
         meta = []
         traj = []
@@ -98,7 +99,7 @@ if __name__ == "__main__":
                 if counter == 101:
                     file.write(str(equal) + '/' + str(nonequal) + '\n')
 
-    counting_all_Words = True
+    counting_all_Words = False
     if counting_all_Words:
         words_dict = count_words(0, 1, path_bvh, path_converted)
         print(words_dict)

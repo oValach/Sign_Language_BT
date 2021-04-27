@@ -62,8 +62,37 @@ def create_trajectory_matrix(dictionary_data):
         pk.dump(trajectory_list, pf)
 
 
-def words_preparation(word1, word2, path_jointlist):
-    """Prepares 2 signals for dtw to be counted on them
+def get_chosen_joints(path_chosen_joints):
+
+    with open(path_chosen_joints, 'r') as pth: # loads chosen joints idxs from the chosen_joints.txt file
+        selected_joints_idxs = pth.readlines()
+    selected_joints_idxs = [int(item.rstrip("\n")) for item in selected_joints_idxs]
+    
+    return selected_joints_idxs
+
+
+def prepare_trajectories(word1, word2, path_chosen_joints):
+    """Prepares 2 signals for comparison
+    Args:
+        word1 (list): First trajectory signal to compare in format [frame,joint,channel]
+        word2 (list): Second trajectory signal to compare in format [frame,joint,channel]
+        path_chosen_joints (string): A path to the chosen_joints.txt file, for example '/data/chosen_joints.txt'
+
+    Returns:
+        [list]: A list of prepared values for each chosen joint separately in format [channel,frame]
+    """
+    chosen_joints = get_chosen_joints(path_chosen_joints)
+    data_prepared = {}
+    for i in range(len(chosen_joints)):
+        seq1 = np.transpose(np.array(word1[:,chosen_joints[i],:]) - np.array(word1[:,1,:]))
+        seq2 = np.transpose(np.array(word2[:,chosen_joints[i],:]) - np.array(word2[:,1,:]))
+        data_prepared[chosen_joints[i]] = [seq1,seq2]
+
+    return data_prepared
+
+
+def words_preparation_old(word1, word2, path_jointlist):
+    """Prepares 2 signals for dtw to be counted on
     Args:
         word1 (list): First signal to count in dtw fcn
         word2 (list): Second signal to count in dtw fcn
@@ -76,7 +105,6 @@ def words_preparation(word1, word2, path_jointlist):
     jointlist = get_jointlist(path_jointlist)
     data_prepared = {}
 
-    # přepočítání 3 dimenzionálních dat na 1 dimenzi porovnáváním po částech těla
     for i in range(len(jointlist)):  # joint
         seq1 = np.zeros(shape=(3, len(word1)), dtype=np.double)
         seq2 = np.zeros(shape=(3, len(word2)), dtype=np.double)
@@ -115,7 +143,7 @@ def words_preparation(word1, word2, path_jointlist):
         if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
             continue
 
-        # "zbaveni se" ucinku pohybu ramen na ruce - ulozeni jejich souradnic pro nasledne odecteni
+        # "zbaveni se" ucinku pohybu ramen na rukou - ulozeni jejich souradnic pro nasledne odecteni
         if ('Spine' in jointlist[i]):
             Spine = np.array([seq1[0], seq1[1], seq1[2],seq2[0], seq2[1], seq2[2]], dtype=object)
             continue
@@ -125,7 +153,7 @@ def words_preparation(word1, word2, path_jointlist):
     return data_prepared
 
 
-def distance_computation_dtw(data_prepared, alg_type):
+def compute_dtw(data_prepared, alg_type):
     """Computes 2 types of DTW algorithm on given data from words_preparation fcn
     Args:
         data_prepared (dictionary) = words_preparation fcn output
@@ -191,8 +219,8 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
-        words_prepared = words_preparation(traj[i], word_traj, path_jointlist)
-        distance[i] = (distance_computation_dtw(words_prepared, alg_type))
+        prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
+        distance[i] = (compute_dtw(prepared_trajectories, alg_type))
 
     sorted_distances = (distance.argsort())
     sorted_words = [meta[item][0] for item in sorted_distances]
@@ -228,7 +256,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     return bestentered
 
 
-def compute(path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
+def compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -241,6 +269,8 @@ def compute(path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resamp
     Returns:
         [list]: A list of all distances between the given number of words and all others
     """
+    with open(path_trajectory, 'rb') as pf:
+        traj = pk.load(pf)              # trajektory [item, frame, joint, channel]
     """
     # GUI to choose used method and metric
     print('CHOOSE ALGORITHM TYPE:')
@@ -340,63 +370,57 @@ def compute(path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resamp
         distance = np.zeros((len(traj), len(traj)))
     elif word_amount != None: # computes with given number of words
         distance = np.zeros((int(word_amount), len(traj)))
-    
+
+    start = timer()
     for i in range(len(distance)):
         for j in range(len(distance[0])):
             if i == j:
                 distance[i, j] = 0
             else:
-                if alg_type == 'dtw': #Classic DTW algorithm
-
-                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
-                    distance[i, j] = (distance_computation_dtw(words_prepared, 'dtw'))
+                if alg_type == 'dtw': # Classic DTW algorithm
+                    prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
+                    distance[i, j] = (compute_dtw(prepared_trajectories, 'dtw'))
                     try:
-                        distance[j, i] = (distance_computation_dtw(words_prepared, 'dtw'))
+                        distance[j, i] = distance[i, j]
                     except:
                         pass
 
                 elif alg_type == 'softdtw':# Differentiable SoftDTW version of DTW
-
-                    words_prepared = words_preparation(traj[i], traj[j], path_jointlist)
-                    distance[i, j] = (distance_computation_dtw(words_prepared, 'softdtw'))
+                    prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
+                    distance[i, j] = (compute_dtw(prepared_trajectories, 'softdtw'))
                     try:
-                        distance[j, i] = (distance_computation_dtw(words_prepared, 'softdtw'))
+                        distance[j, i] = distance[i, j]
                     except:
                         pass
 
                 elif alg_type == 'method_combination': # Signal resample and distance computation separately
-                    
-                    with open(path_chosen_joints, 'r') as pth: # loads chosen joints idxs from the chosen_joints.txt file
-                        selected_joints_idxs = pth.readlines()
-                    selected_joints_idxs = [int(item.rstrip("\n")) for item in selected_joints_idxs]
 
-                    #selected_joints_idxs = [3,4,5,32,33,34] # RightArm, RightForeArm, RightHand, LeftArm, LeftForeArm, LeftHand
-                    distances_joints = []
+                    if resample_method == 'interpolation':
+                        prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
+                        _,B,C = resample(prepared_trajectories, order, resample_method, int_method, graph=0)
+                        dist_output = compare(prepared_trajectories, dist = distance_method)
 
-                    for k in range(len(selected_joints_idxs)):
-                        if resample_method == 'interpolation':
-                            A,B,C = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], order, resample_method, int_method, graph=0)
-                            one_joint_distance = compare(B,C, dist = distance_method)
-                            distances_joints.append(one_joint_distance)
-                        else:
-                            resample_out = resample(traj[i][:,selected_joints_idxs[k],:], traj[j][:,selected_joints_idxs[k],:], order, resample_method, graph=0)
-                            one_joint_distance = compare(resample_out[1],resample_out[2], dist = distance_method)
-                            distances_joints.append(one_joint_distance)
+                    elif resample_method == 'fourier':
+                        prepared_trajectories = prepare_trajectories(B, C, path_chosen_joints)
+                        _,B,C = resample(prepared_trajectories, order, resample_method, graph=0)
+                        dist_output = compare(prepared_trajectories, dist = distance_method)
 
-                    joints_distance_mean = np.mean(distances_joints)
-                    distance[i, j] = joints_distance_mean
+                    else:
+                        print('Wrong resample method entered.')
+
+                    distance[i, j] = dist_output
                     try:
-                        distance[j, i] = joints_distance_mean
+                        distance[j, i] = distance[i, j]
                     except:
                         pass
                 else:
-                    print('Nedefinován typ algoritmu.')
+                    print('Wrong algorithm type entered.')
 
     # Save output data, graph and time info
     end = timer()
     time = end-start
     with open("Sign_Language_BP/output_files/time_{}_{}.txt".format(order,distance_method),"w") as file:
-        file.write(time)
+        file.write(str(time))
     with open("Sign_Language_BP/output_files/out_matrix_{}_{}.pkl".format(order,distance_method), 'wb') as pk_out:
         pk.dump(distance, pk_out)
 
@@ -409,224 +433,156 @@ def compute(path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resamp
     return distance
 
 
-def resample(word1, word2, order = 'notImportant', method = 'interpolation', int_method = 'linear', graph = 0):
+def resample(data_prepared, order = 'notImportant', method = 'interpolation', int_method = 'linear', graph = 0):
     """Resamples word2 signal to the length of the word1 signal
     Args:
-        word1 [list]: signal, to ots length is being the first one resampled
-        word2 [list]: signal that is being resampled
+        data_prepared [dictionary]: prepared data from prepare_trajectories fcn
         method [string]: the method of resampling used, 'interpolation', 'fourier'
         int_method [string]: the method of interpolation if the method 'interpolation' is selected
         graph [boolean]: yes or no to display graph with comparison of old and resampled signal
 
     Returns:
-        [list]: List of lists, initial word2 signal restructualized, resampled word2 signal, initial word1 signal restructualized
+        [dictionary]: Dictionary with the same format as data_prepared with resampled lists
     """
     if method == 'fourier':
-        joint_list = get_jointlist(path_jointlist)
-
-        word1_restruct = np.zeros(shape=(3),dtype = object)
-        word2_restruct = np.zeros(shape=(3),dtype = object)
-        word_resampled = np.zeros(shape=(3),dtype = object)
-
-        for i in range(3):
-            word1_restruct[i] = [frame[i] for frame in word1]
-            word2_restruct[i] = [frame[i] for frame in word2]
-
-        # Choose resample shorter to longer, vice versa or no rule
-        if order == 'toLonger':     # shorter to longer
-            if len(word1_restruct)<len(word2_restruct):
-                word_to_resample = word1_restruct
-                word_second = word2_restruct
-            else:
-                word_to_resample = word2_restruct
-                word_second = word1_restruct
-        elif order == 'toShorter':  # longer to shorter
-            if len(word1_restruct)>len(word2_restruct):
-                word_to_resample = word1_restruct
-                word_second = word2_restruct
-            else:
-                word_to_resample = word2_restruct
-                word_second = word1_restruct
-        else:                       # first to second
-            word_to_resample = word1_restruct
-            word_second = word2_restruct
-
-        x = np.linspace(0, len(word_second[0]), len(word_to_resample[0]))
-
-        for i in range(3):
-            word_resampled[i] = signal.resample(word_to_resample[i], len(word_second[i]))
-        xresampled = np.linspace(0, len(word_second[0]), len(word_resampled[0]))
         
-        if graph:
-            """
-            #3 different figures
-            channels = ['x','y','z']
-            for i in range(3):
-                plt.figure()
-                plt.plot(word_to_resample[i],'g')
-                plt.plot(word_resampled[i],'r')
-                plt.title('Resample kanálu {} trajektorie kloubu {} ve slově "{}" '.format(channels[i],joint_list[joint],word1_meta[0]))
-                plt.legend(['Initial data signal','Interpolated data signal'], loc='best')
-                plt.xlabel('X')
-                plt.ylabel('Y')
-                plt.show()
-            """
-            interpolated_for_graph = np.zeros(shape=(3),dtype = object)
-            for j in range(len(word_resampled)):
-                for i in range(len(word_resampled[j])):
-                    if i%4 == 0:
-                        interpolated_for_graph[j] = np.append(interpolated_for_graph[j],word_resampled[j][i])
+        data_out = {}
+        chosen_joints = get_chosen_joints(path_chosen_joints)
 
-            interpolated_for_graph[0] = np.delete(interpolated_for_graph[0],0)
-            interpolated_for_graph[1] = np.delete(interpolated_for_graph[1],0)
-            interpolated_for_graph[2] = np.delete(interpolated_for_graph[2],0)
+        len_words = [len(data_prepared[chosen_joints[0]][0][0]), len(data_prepared[chosen_joints[0]][1][0])]
+        word_to_resample = -1
+        word_second = -1
 
-            xinterpgraph = np.linspace(0, len(word_to_resample[0]), len(interpolated_for_graph[0]))
-            
-            mpl.style.use('seaborn')
-            fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot([0.0,9.21428571], [-7.969536608198854,-7.974704499955581], marker="*", markersize=6, linewidth=0.3, color = 'r')
-            ax[0].plot(x, word_to_resample[0], marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[0].plot(xresampled, word_resampled[0], color = 'r', linewidth=0.5, markersize=4)
-            ax[0].plot(xinterpgraph, interpolated_for_graph[0],'*',markersize=6, color = 'r')
-            ax[0].set_title('Převzorkovaná osa X')
-            ax[1].plot(x, word_to_resample[1], marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[1].plot(xresampled, word_resampled[1], color = 'r', linewidth=0.5, markersize=4)
-            ax[1].plot(xinterpgraph, interpolated_for_graph[1],'*',markersize=6, color = 'r')
-            ax[1].set_title('Převzorkovaná osa Y')
-            ax[2].plot(x, word_to_resample[2], marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[2].plot(xresampled, word_resampled[2], color = 'r', linewidth=0.5, markersize=4)
-            ax[2].plot(xinterpgraph, interpolated_for_graph[2],'*',markersize=6, color = 'r')
-            ax[2].set_title('Převzorkovaná osa Z')
-            ax[2].set_xlabel('čas [snímek]')
-            ax[1].set_ylabel('vzdálenost od počátku [cm]')
-            fig.legend(['Převzorkovaný signál','Původní signál'], loc='upper right')
-            #plt.suptitle('Furierova transformace trajektorie kloubu {} na délku slova "{}" z délky slova "{}"'.format(joint_list[joint],word1_meta[0],word2_meta[0]),fontsize=15)
-            plt.show()
-            """
-            #3D graph
-            ax = plt.axes(projection='3d')
-            ax.plot3D(word_resampled[0],word_resampled[1],word_resampled[2], 'r.')
-            ax.plot3D(word_to_resample[0],word_to_resample[1],word_to_resample[2], 'black')
-            ax.plot3D(word_second[0],word_second[1],word_second[2], 'blue')
-            ax.plot3D(word_to_resample[0][0], word_to_resample[1][0], word_to_resample[2][0], 'k*')
-            plt.legend(['resampled data','initial data', 'data from longer dataframe', 'starting point','hips location'], loc='best')
-            plt.title('Trajektorie kloubu {}'.format(joint_list[joint]))
-            plt.xlabel('X')
-            plt.ylabel('Y')
-            plt.show()
-            """
-        return [word_to_resample,word_resampled,word_second]
-
-    if method == 'interpolation':
-        joint_list = get_jointlist(path_jointlist)
-
-        word1_restruct = np.zeros(shape=(3),dtype = object)
-        word2_restruct = np.zeros(shape=(3),dtype = object)
-        word_interpolated = np.zeros(shape=(3),dtype = object)
-        if graph:
-            word_interpolatedx = np.zeros(shape=(3),dtype = object)
-            word_interpolatedxx = np.zeros(shape=(3),dtype = object)
-
-        for i in range(3):
-            word1_restruct[i] = [frame[i] for frame in word1]
-            word2_restruct[i] = [frame[i] for frame in word2]
-
-        # Choose resample shorter to longer, vice versa or no rule
         if order == 'toLonger':         # shorter to longer
-            if len(word1_restruct)<=len(word2_restruct):
-                word_to_resample = word1_restruct
-                word_second = word2_restruct
-            else:
-                word_to_resample = word2_restruct
-                word_second = word1_restruct
+            if len_words[0] <= len_words[1]:
+                word_to_resample = 0
+                word_second = 1
+
+            if len_words[0] > len_words[1]:
+                word_to_resample = 1
+                word_second = 0
+
         elif order == 'toShorter':      # longer to shorter
-            if len(word1_restruct)>len(word2_restruct):
-                word_to_resample = word1_restruct
-                word_second = word2_restruct
-            else:
-                word_to_resample = word2_restruct
-                word_second = word1_restruct
-        else:                           # first to second
-            word_to_resample = word1_restruct
-            word_second = word2_restruct
+            if len_words[0] >= len_words[1]:
+                word_to_resample = 0
+                word_second = 1
 
-
-        x = np.linspace(0, len(word_second[0]), len(word_to_resample[0]))
-
-        for i in range(3):
-            word_interpolated[i] = interpolate_signal(word_to_resample[i],len(word_second[i]), int_method)
-            if graph:
-                word_interpolatedx[i] = interpolate_signal(word_to_resample[i],len(word_second[i]*10), 'linear')
-                word_interpolatedxx[i] = interpolate_signal(word_to_resample[i],len(word_second[i]), 'linear')
-        if graph:
-            xinterp = np.linspace(0, len(word_second[0]), len(word_interpolated[0]))
-            xinterpx = np.linspace(0, len(word_second[0]), len(word_interpolatedx[0]*10))
+            if len_words[0] < len_words[1]:
+                word_to_resample = 1
+                word_second = 0
         
+        # Computation
+        for key, val in data_prepared.items():
+            item_new = np.zeros(shape=(2,3,len_words[word_second]))
+            for i in range(3):
+                item_new[word_to_resample][i] = signal.resample(val[word_to_resample][i], len_words[word_second])
+                item_new[word_second][i] = val[word_second][i]
+
+            data_out[key] = item_new
+
         if graph:
-            
-            interpolated_for_graph = np.zeros(shape=(3),dtype = object)
-            for j in range(len(word_interpolated)):
-                for i in range(len(word_interpolated[j])):
-                    if i%4 == 0:
-                        interpolated_for_graph[j] = np.append(interpolated_for_graph[j],word_interpolated[j][i])
+            x_initial = np.linspace(0, len_words[word_second], len_words[word_to_resample])
+            x_resampled = np.linspace(0, len_words[word_second], len_words[word_second])
 
-            interpolated_for_graph[0] = np.delete(interpolated_for_graph[0],0)
-            interpolated_for_graph[1] = np.delete(interpolated_for_graph[1],0)
-            interpolated_for_graph[2] = np.delete(interpolated_for_graph[2],0)
+            data_to_graph_initial = data_prepared[chosen_joints[0]] # graphing only first chosen joint for example
+            data_to_graph_resampled = data_out[chosen_joints[0]]
 
-            xinterpgraph = np.linspace(0, len(word_second[0]), len(interpolated_for_graph[0]))
-            
-            interpolated_for_graphx = np.zeros(shape=(3),dtype = object)
-            for j in range(len(word_interpolatedxx)):
-                for i in range(len(word_interpolatedxx[j])):
-                    if i%4 == 0:
-                        interpolated_for_graphx[j] = np.append(interpolated_for_graphx[j],word_interpolatedxx[j][i])
+            x_resampled_line = np.linspace(0, len_words[word_second], len_words[word_second]*10)
+            data_to_graph_line = np.zeros(shape=(3,len_words[word_second]*10))
+            for i in range(3):
+                data_to_graph_line[i] = signal.resample(data_prepared[chosen_joints[0]][word_to_resample][i], len_words[word_second]*10)
 
-            interpolated_for_graphx[0] = np.delete(interpolated_for_graphx[0],0)
-            interpolated_for_graphx[1] = np.delete(interpolated_for_graphx[1],0)
-            interpolated_for_graphx[2] = np.delete(interpolated_for_graphx[2],0)
-
-            xinterpgraphx = np.linspace(0, len(word_second[0]), len(interpolated_for_graphx[0]))
-            
             mpl.style.use('seaborn')
-            fig, ax = plt.subplots(3,1, sharex=True)
-            ax[0].plot(x, word_to_resample[0],marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[0].plot([0.0,4.03125], [-4.362433016513284,-4.306118578837304],marker="*", markersize=6, linewidth=0.7, color = 'r')
-            ax[0].plot(xinterp, word_interpolated[0],'r', linewidth=0.7)
-            ax[0].plot(xinterpgraph, interpolated_for_graph[0],'*',markersize=6, color = 'r')
-            ax[0].set_title('Interpolovaná osa X')
+            fig, ax = plt.subplots(3, 1, sharex=True)
+            ax[0].plot(x_initial, data_to_graph_initial[word_to_resample][0], marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[0].plot(x_resampled_line[0:1], data_to_graph_line[0][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[0].plot(x_resampled_line, data_to_graph_line[0], color = 'r', linewidth=0.3, markersize=0)
+            ax[0].plot(x_resampled, data_to_graph_resampled[word_to_resample][0], marker='*', color = 'r', linewidth=0, markersize=6)
 
-            ax[1].plot(x, word_to_resample[1],marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[1].plot(xinterp, word_interpolated[1],'r', linewidth=0.7)
-            ax[1].plot(xinterpgraph, interpolated_for_graph[1],'*', markersize=6, color = 'r')
-            ax[1].set_title('Interpolovaná osa Y')
+            ax[1].plot(x_initial, data_to_graph_initial[word_to_resample][1],marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[1].plot(x_resampled_line[0:1], data_to_graph_line[1][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[1].plot(x_resampled_line, data_to_graph_line[1], color = 'r', linewidth=0.3, markersize=0)
+            ax[1].plot(x_resampled, data_to_graph_resampled[word_to_resample][1], marker='*', color = 'r', linewidth=0, markersize=6)
 
-            ax[2].plot(x, word_to_resample[2],marker='D', color = 'k', linewidth=0.3, markersize=4)
-            ax[2].plot(xinterp, word_interpolated[2],'r', linewidth=0.7)
-            ax[2].plot(xinterpgraph, interpolated_for_graph[2],'*', markersize=6, color = 'r')
+            ax[2].plot(x_initial, data_to_graph_initial[word_to_resample][2],marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[2].plot(x_resampled_line[0:1], data_to_graph_line[2][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[2].plot(x_resampled_line, data_to_graph_line[2], color = 'r', linewidth=0.3, markersize=0)
+            ax[2].plot(x_resampled, data_to_graph_resampled[word_to_resample][2], marker='*', color = 'r', linewidth=0, markersize=6)
+
             ax[2].set_title('Interpolovaná osa Z')
             ax[2].set_xlabel('čas [snímek]')
             ax[1].set_ylabel('vzdálenost od počátku [cm]')
             fig.legend(['Původní signál','Interpolovaný signál'], loc='upper right')
             plt.show()
 
-            #Rozdil linearni a kubicke interpolace
-            fig = plt.figure()
-            plt.plot(x, word_to_resample[0],marker='D', color = 'k', linewidth=0.3, markersize=7)
-            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304], marker=".", markersize=10, linewidth=0.7, color = 'r')
-            plt.plot([0,4.03125], [-4.362433016513284,-4.306118578837304], marker=".", markersize=10, linewidth=0.7, color = 'b')
-            plt.plot(xinterp, word_interpolated[0],'r', linewidth=0.7)
-            plt.plot(xinterpgraph, interpolated_for_graph[0],'.',markersize=10, color = 'r')
-            plt.plot(xinterpx, word_interpolatedx[0],'b', linewidth=0.7)
-            plt.plot(xinterpgraphx, interpolated_for_graphx[0],'.',markersize=10, color = 'b')
+        return data_out
 
-            plt.xlabel('čas [snímek]')
-            plt.ylabel('vzdálenost od počátku [cm]')
-            fig.legend(['Původní signál','Kubicky interpolovaný signál', 'Lineárně interpolovaný signál'], loc='upper right')
+    if method == 'interpolation':
+
+        data_out = {}
+        chosen_joints = get_chosen_joints(path_chosen_joints)
+
+        len_words = [len(data_prepared[chosen_joints[0]][0][0]), len(data_prepared[chosen_joints[0]][1][0])]
+        word_to_resample = -1
+        word_second = -1
+
+        if order == 'toLonger':         # shorter to longer
+            if len_words[0] <= len_words[1]:
+                word_to_resample = 0
+                word_second = 1
+
+            if len_words[0] > len_words[1]:
+                word_to_resample = 1
+                word_second = 0
+
+        elif order == 'toShorter':      # longer to shorter
+            if len_words[0] >= len_words[1]:
+                word_to_resample = 0
+                word_second = 1
+
+            if len_words[0] < len_words[1]:
+                word_to_resample = 1
+                word_second = 0
+        
+        # Computation
+        for key, val in data_prepared.items():
+            item_new = np.zeros(shape=(2,3,len_words[word_second]))
+            for i in range(3):
+                item_new[word_to_resample][i] = interpolate_signal(val[word_to_resample][i], len_words[word_second], int_method)
+                item_new[word_second][i] = val[word_second][i]
+
+            data_out[key] = item_new
+
+        if graph:
+            x_initial = np.linspace(0, len_words[word_second], len_words[word_to_resample])
+            x_resampled = np.linspace(0, len_words[word_second], len_words[word_second])
+            data_to_graph_initial = data_prepared[chosen_joints[0]] # graphing only first chosen joint for example
+            data_to_graph_resampled = data_out[chosen_joints[0]]
+
+            mpl.style.use('seaborn')
+            fig, ax = plt.subplots(3,1, sharex=True)
+            ax[0].plot(x_initial, data_to_graph_initial[word_to_resample][0], marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[0].plot(x_initial[0:1], data_to_graph_initial[word_to_resample][0][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[0].plot(x_initial, data_to_graph_initial[word_to_resample][0], color = 'r', linewidth=0.3, markersize=0)
+            ax[0].plot(x_resampled, data_to_graph_resampled[word_to_resample][0], marker='*', color = 'r', linewidth=0, markersize=6)
+
+            ax[1].plot(x_initial, data_to_graph_initial[word_to_resample][1],marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[1].plot(x_initial[0:1], data_to_graph_initial[word_to_resample][1][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[1].plot(x_initial, data_to_graph_initial[word_to_resample][1], color = 'r', linewidth=0.3, markersize=0)
+            ax[1].plot(x_resampled, data_to_graph_resampled[word_to_resample][1], marker='*', color = 'r', linewidth=0, markersize=6)
+
+            ax[2].plot(x_initial, data_to_graph_initial[word_to_resample][2],marker='D', color = 'k', linewidth=0, markersize=4)
+            ax[2].plot(x_initial[0:1], data_to_graph_initial[word_to_resample][2][0:1], marker='*', color = 'r', linewidth=0.3, markersize=6)
+            ax[2].plot(x_initial, data_to_graph_initial[word_to_resample][2], color = 'r', linewidth=0.3, markersize=0)
+            ax[2].plot(x_resampled, data_to_graph_resampled[word_to_resample][2], marker='*', color = 'r', linewidth=0, markersize=6)
+
+            ax[2].set_title('Interpolovaná osa Z')
+            ax[2].set_xlabel('čas [snímek]')
+            ax[1].set_ylabel('vzdálenost od počátku [cm]')
+            fig.legend(['Původní signál','Interpolovaný signál'], loc='upper right')
             plt.show()
 
-        return [word_to_resample,word_interpolated,word_second]
+        return data_out
 
 
 def interpolate_signal(signal, final_length, int_method = 'linear'):
@@ -647,7 +603,7 @@ def interpolate_signal(signal, final_length, int_method = 'linear'):
     return signal_interpolated
 
 
-def compare(word1, word2, dist = 'euclidean'):
+def compare(data_prepared, dist = 'euclidean'):
     """Counts the distance between 2 3D signals using one of implemented metrics
     Args:
         word1 [list]: The first signal for the computation
@@ -657,42 +613,48 @@ def compare(word1, word2, dist = 'euclidean'):
     Returns:
         [double]: The distance between 2 given signals
     """
-    distance = 0
-    word1 = np.array([word1[0],word1[1],word1[2]])
-    word2 = np.array([word2[0],word2[1],word2[2]])
-    if dist == 'euclidean':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.euclidean(word1[:,i],word2[:,i])
-    elif dist == 'hamming':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.hamming(word1[:,i],word2[:,i])
-    elif dist == 'minkowsky':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.minkowski(word1[:,i],word2[:,i], p=3)
-    elif dist == 'mahalanobis':
-        for i in range(len(word1[1])):
-            V = np.cov(np.array([word1[:,i],word2[:,i]]).T)
-            IV = np.linalg.pinv(V)
-            distance += spatial.distance.mahalanobis(word1[:,i],word2[:,i], IV)
-    elif dist == 'pearson':
-        return np.corrcoef(word1, word2)
-    elif dist == 'correlationDistance':
-        return dcor.distance_correlation(word1, word2)
-    elif dist == 'canberra':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.canberra(word1[:,i],word2[:,i])
-    elif dist == 'braycurtis':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.braycurtis(word1[:,i],word2[:,i])
-    elif dist == 'chebyshev':
-        for i in range(len(word1[1])):
-            distance += spatial.distance.chebyshev(word1[:,i],word2[:,i])
-    elif dist =='area':
-        distance = similaritymeasures.area_between_two_curves(word1, word2)
-    else:
-        for i in range(len(word1[1])):
-            distance += spatial.distance.euclidean(word1[:,i],word2[:,i])
-    return distance
+    distances = np.zeros(shape=len(data_prepared))
+    joint_counter = -1
+
+    for _, val in data_prepared.items():
+
+        joint_counter += 1
+
+        if (dist != 'pearson') and(dist != 'correlationDistance') and (dist != 'area'):
+
+            for i in range(len(val[0])):
+                if dist == 'euclidean':
+                    distances[joint_counter] += spatial.distance.euclidean(val[0][:,i],val[1][:,i])
+                elif dist == 'hamming':
+                    distances[joint_counter] += spatial.distance.hamming(val[0][:,i],val[1][:,i])
+                elif dist == 'minkowsky':
+                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=3)
+                elif dist == 'mahalanobis':
+                    V = np.cov(np.array([val[0][:,i],val[1][:,i]]).T)
+                    IV = np.linalg.pinv(V)
+                    distances[joint_counter] += spatial.distance.mahalanobis(val[0][:,i],val[1][:,i], IV)
+                elif dist == 'canberra':
+                    distances[joint_counter] += spatial.distance.canberra(val[0][:,i],val[1][:,i])
+                elif dist == 'braycurtis':
+                    distances[joint_counter] += spatial.distance.braycurtis(val[0][:,i],val[1][:,i])
+                elif dist == 'chebyshev':
+                    distances[joint_counter] += spatial.distance.chebyshev(val[0][:,i],val[1][:,i])
+                else:
+                    print('Wrong distance metrics entered.')
+
+        elif dist == 'pearson':
+            correlation = np.zeros(shape=len(val[0]))
+            for i in range(len(val[0])):
+                correlation[i] = np.corrcoef(val[0][i],val[1][i])[0][1]
+            distances[joint_counter] = np.mean(correlation)
+        elif dist == 'correlationDistance':
+            distances[joint_counter] = dcor.distance_correlation(val[0],val[1])
+        elif dist =='area':
+            distances[joint_counter] = similaritymeasures.area_between_two_curves(val[0],val[1])
+        else:
+            print('Wrong distance metrics entered.')
+
+    return np.mean(distances)
 
 
 def count_limit(limit):
@@ -717,11 +679,20 @@ def count_limit(limit):
 
 
 def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
+    """Analysis of given output matrix from one algorithm type
+    Args:
+        method_matrix [list]: an output matrix from fcn compute
+        noOfminimuminstances [int]: how many minimum instances of one word have to exist to include the word into analysis
+        graph [boolean]: Yes or No to display a graph of analysis
+
+    Returns:
+        [words_data]: The result for all words separately
+    """
     [noOfWords, words_counts_dict] = count_limit(noOfminimuminstances)
 
     matrix_chosen = method_matrix[0:noOfWords]
 
-    #words_data = np.empty(shape=(noOfWords,4), dtype=object)
+    words_data = np.empty(shape=(noOfWords,4), dtype=object)
 
     matrix_sorted = matrix_chosen.argsort()
     
@@ -758,7 +729,7 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
         elif word_main in counts_dict.keys():
             counts_dict[word_main] =  [sum(x) for x in zip(counts_dict[word_main], tops)]
 
-        #words_data[i] = tops
+        words_data[i] = tops
 
     method_results = np.zeros(len(top_counts))
     for key, val in counts_dict.items():
@@ -788,6 +759,7 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
         plt.legend(['Rozdíl významu', 'Shoda významu'], loc='upper right')
         plt.show()
 
+        return words_data
 
 if __name__ == '__main__':
 
@@ -848,7 +820,7 @@ if __name__ == '__main__':
         plt.show()
 
     sorting = False
-    if sorting:
+    if sorting: # example of data sort
         sign_name_list = [m[0] for m in meta]
         unique_sign_list_unordered = set(sign_name_list)
         unique_count = []
@@ -868,28 +840,29 @@ if __name__ == '__main__':
     # Testing fcn of resample only
     test_resample = False
     if test_resample:
-        joint = 5
-        word1 = traj[191][:, joint, :] #0. znak, vsechny snimky pro [joint]. joint, vsechny dimenze
+        joint = 3
+        word1 = traj[191]
         word1_meta = meta[191]
 
-        word2 = traj[700][:, joint, :]
-        word2_meta = meta[700]
-
-        [word2_restruct,word_interpolated,word1_restruct] = resample(word2, word1, 'toShorter', 'interpolation', 'cubic', graph=1)
+        word2 = traj[250]
+        word2_meta = meta[250]
+        prepared_trajectories = prepare_trajectories(word1,word2,path_chosen_joints)
+        resample_out = resample(prepared_trajectories, 'toLonger', 'interpolation', 'cubic', graph=1)
 
     # Testing fcn of signal comparison
     test_signal_comparison = False
     if test_signal_comparison:
         joint = 3
-        word1 = traj[900][:, joint, :]
+        word1 = traj[900]
         word1_meta = meta[900]
 
-        word2 = traj[200][:, joint, :]
+        word2 = traj[200]
         word2_meta = meta[200]
 
-        resample_out = resample(word2, word1,'toShorter', 'interpolation', 'linear', graph=0) #returns reorganized word1 and resampled word2
-        kind = 'area'
-        distance = compare(resample_out[1],resample_out[2], dist = kind)
+        prepared_trajectories = prepare_trajectories(word1, word2, path_chosen_joints)
+        resample_out = resample(prepared_trajectories, 'toShorter', 'interpolation', 'linear', graph=0)
+        kind = 'chebyshev'
+        distance = compare(resample_out, dist = kind)
 
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
@@ -932,8 +905,8 @@ if __name__ == '__main__':
                     print([linear[i][item] for item in sorted_lin[i,j:j+5]])   # print vzdalenostnich hodnot pro dana slova
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
-    # Display a correctness histogram of one method result
-    method_analyze = True
+    # Analysis of one method output matrix from compute fcn
+    method_analyze = False
     if method_analyze:
         with open("Sign_Language_BP/output_files/final/DTW/out_matrix.pkl", 'rb') as pickle_file:
             DTW = pk.load(pickle_file)
@@ -949,17 +922,4 @@ if __name__ == '__main__':
         int_method = 'linear'
         distance_method = 'euclidean'
         start = timer()
-        distance_matrix = compute(path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
-
-        alg_type = 'method_combination'
-        resample_method = 'interpolation'
-        int_method = 'linear'
-        distance_method = 'euclidean'
-        start = timer()
-        distance_matrix = compute(path_chosen_joints, alg_type=alg_type, order='toLonger', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
-
-    test = False
-    if test:
-        print(meta[165])
-        print(meta[189])
-        print(len(meta))
+        distance_matrix = compute(path_jointlist, path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

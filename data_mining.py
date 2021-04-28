@@ -805,32 +805,20 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
         plt.grid(True)
         plt.bar(x,graph_data2, color='red', alpha=1, width=0.4, edgecolor='black', linewidth=1)
         plt.bar(x,graph_data1, color='green', alpha=1, width=0.4, edgecolor='black', linewidth=1)
-        plt.xlabel('Velikost datasetu nejbližších znaků [znak]')
-        plt.ylabel('Shoda znaku se testovaným v daném datasetu [%]')
+        plt.xlabel('Počet nejbližších projevů [znak]')
+        plt.ylabel('Zastoupení projevu se stejným významem [%]')
         for index,data in enumerate(graph_data1):
             plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=11), fontweight='bold')
-        plt.legend(['Rozdíl významu', 'Shoda významu'], loc='upper right')
-        plt.show()
+        plt.legend(['Rozdíl významu', 'Shoda významu'], bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=2)
+        #plt.show()
 
         return words_data
 
 if __name__ == '__main__':
 
-    #paths = 'data/paths.txt' # for metacentrum calculations
     paths = 'data/paths.txt'
 
-    with open(paths, 'r') as pth:
-        paths_list = pth.readlines()
-    
-    bvh_dir = paths_list[0].rstrip("\n") # all bvh files takes and dictionaries
-    bvh_dict = paths_list[1].rstrip("\n") # bvh files with separate words signed
-    source_dir = paths_list[2].rstrip("\n") # data converted from angular to global positions
-    path_jointlist = paths_list[3].rstrip("\n") # path to the joint_list.txt file 
-    path_chosen_joints = paths_list[4].rstrip("\n") # path to the chosen joints indexes from joint_list.txt file
-    path_dictionary = paths_list[5].rstrip("\n") # path to the ultimate_dictionary2.txt file
-    path_metadata = paths_list[6].rstrip("\n") # path to the meta.pkl file
-    path_trajectory = paths_list[7].rstrip("\n") # path to the traj.pkl file
-    path_output = paths_list[8] # path to the output_files folder
+    bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,path_output,joint_list,meta,traj = load(paths)
 
     # converts data from angular BVH to global positions (npy matrix)
     mine = False
@@ -843,13 +831,6 @@ if __name__ == '__main__':
         dict_items = SL_dict.read_dictionary(path_dictionary, 'dictionary_items')
         dict_takes = SL_dict.read_dictionary(path_dictionary, 'dictionary_takes')
         create_trajectory_matrix(dict_items + dict_takes)
-
-    with open(path_jointlist, 'r') as f:
-        joint_list = f.readlines()      # the list of markers (tracked body parts)
-    with open(path_metadata, 'rb') as pf:
-        meta = pk.load(pf)              # metadata: meaning, the initial file, anotation
-    with open(path_trajectory, 'rb') as pf:
-        traj = pk.load(pf)              # trajektory [item, frame, joint, channel]
 
     flexing = False
     if flexing:  # access to data examples
@@ -888,8 +869,8 @@ if __name__ == '__main__':
     # DTW of one word to all others
     test_dtw_one_word = False
     if test_dtw_one_word: 
-        word = 'bude'
-        one_word_dtw(word, path_jointlist, 20, 'dtw', graph=1)
+        word = 'n_2'
+        one_word_dtw(word, path_jointlist, 1, 'softdtw', graph=1)
     
     # Testing fcn of resample only
     test_resample = False
@@ -962,16 +943,17 @@ if __name__ == '__main__':
     # Analysis of one method output matrix from compute fcn
     method_analyze = True
     if method_analyze:
-        with open("output_files/final/DTW/6 joints/out_matrix.pkl", 'rb') as pickle_file:
-            DTW_6 = pk.load(pickle_file)
         with open("output_files/final/DTW/all joints/out_matrix.pkl", 'rb') as pickle_file:
-            DTW_all = pk.load(pickle_file)
+            output_1 = pk.load(pickle_file)
+        with open("output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
+            output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
-        analyze_result(DTW_6, minOf_instances, graph=1)
-        analyze_result(DTW_all, minOf_instances, graph=1)
-
+        analyze_result(output_1, minOf_instances, graph=1)
+        analyze_result(output_2, minOf_instances, graph=1)
+        plt.show()
     # Compute one algorithm option on optional data size
+    
     compute_main = False
     if compute_main:
         alg_type = 'method_combination'

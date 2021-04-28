@@ -744,14 +744,15 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
     matrix_chosen = method_matrix[0:noOfWords]
 
-    words_data = np.empty(shape=(noOfWords,4), dtype=object)
+    top_counts = [1,3,5,10,20,30]
+
+    words_data = np.empty(shape=(noOfWords,len(top_counts)), dtype=object)
 
     matrix_sorted = matrix_chosen.argsort()
     
     counts_dict = {}
     
     for i in range(noOfWords):
-        top_counts = [1,3,5,10,20,30]
         tops = np.zeros(len(top_counts))
 
         tested = matrix_sorted[i].tolist()
@@ -816,7 +817,7 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 if __name__ == '__main__':
 
     #paths = 'data/paths.txt' # for metacentrum calculations
-    paths = 'Sign_Language_BP/data/paths.txt'
+    paths = 'data/paths.txt'
 
     with open(paths, 'r') as pth:
         paths_list = pth.readlines()
@@ -959,13 +960,16 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
-        with open("Sign_Language_BP/output_files/final/DTW/out_matrix.pkl", 'rb') as pickle_file:
-            DTW = pk.load(pickle_file)
+        with open("output_files/final/DTW/6 joints/out_matrix.pkl", 'rb') as pickle_file:
+            DTW_6 = pk.load(pickle_file)
+        with open("output_files/final/DTW/all joints/out_matrix.pkl", 'rb') as pickle_file:
+            DTW_all = pk.load(pickle_file)
 
         minOf_instances = 20
-        analyze_result(DTW, minOf_instances, graph=1)
+        analyze_result(DTW_6, minOf_instances, graph=1)
+        analyze_result(DTW_all, minOf_instances, graph=1)
 
     # Compute one algorithm option on optional data size
     compute_main = False

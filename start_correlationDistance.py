@@ -1,6 +1,6 @@
 from data_mining import load, compute
 
-paths = 'data/paths.txt'
+paths = 'data/paths_.txt'
 
 bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,path_output,joint_list,meta,traj = load(paths)
 

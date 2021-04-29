@@ -803,13 +803,14 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
             x.append(str(top_counts[l]))
         plt.figure()
         plt.grid(True)
+        plt.plot(0,0, markersize=0, linewidth=0)
         plt.bar(x,graph_data2, color='red', alpha=1, width=0.4, edgecolor='black', linewidth=1)
         plt.bar(x,graph_data1, color='green', alpha=1, width=0.4, edgecolor='black', linewidth=1)
         plt.xlabel('Počet nejbližších projevů [znak]')
         plt.ylabel('Zastoupení projevu se stejným významem [%]')
         for index,data in enumerate(graph_data1):
             plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=11), fontweight='bold')
-        plt.legend(['Rozdíl významu', 'Shoda významu'], bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=2)
+        plt.legend(['','Rozdíl významu', 'Shoda významu'], bbox_to_anchor=(-0.1,1.02,0.6,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3)
         #plt.show()
 
         return words_data
@@ -943,7 +944,7 @@ if __name__ == '__main__':
     # Analysis of one method output matrix from compute fcn
     method_analyze = True
     if method_analyze:
-        with open("output_files/final/DTW/all joints/out_matrix.pkl", 'rb') as pickle_file:
+        with open("output_files/final/Lin, Eucl, to Longer/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
         with open("output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)

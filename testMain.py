@@ -98,9 +98,3 @@ if __name__ == "__main__":
                 file.write(str(out_words[minIdx1]) + ',' + str(out_words[minIdx2]) + ' : ' + str(minVal) + '    '+str(out_words[minIdx1]==out_words[minIdx2]) + '\n')
                 if counter == 101:
                     file.write(str(equal) + '/' + str(nonequal) + '\n')
-
-    counting_all_Words = False
-    if counting_all_Words:
-        words_dict = count_words(0, 1, path_bvh, path_converted)
-        print(words_dict)
-        print(len(words_dict))

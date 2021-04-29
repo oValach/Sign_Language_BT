@@ -13,4 +13,6 @@ source_words/
 bvh_dict/
 data/meta.pkl
 data/traj.pkl
+data/paths.txt
+data/paths_.txt
 output_files/final/

@@ -100,6 +100,20 @@ def get_chosen_joints(path_chosen_joints):
     return selected_joints_idxs
 
 
+def get_jointlist(path_jointlist):
+    """Returns joint list
+    Args:
+        path_jointlist (string) = path to the joint_list.txt file in pc
+
+    Returns:
+        [list]: List of joints
+    """
+    file_joints = open(path_jointlist, 'r')
+    joints = file_joints.readlines()
+    joints = [f.rstrip() for f in joints]
+    return joints
+
+
 def prepare_trajectories(word1, word2, path_chosen_joints):
     """Prepares 2 signals for comparison
     Args:
@@ -116,68 +130,6 @@ def prepare_trajectories(word1, word2, path_chosen_joints):
         seq1 = np.transpose(np.array(word1[:,chosen_joints[i],:]) - np.array(word1[:,1,:]))
         seq2 = np.transpose(np.array(word2[:,chosen_joints[i],:]) - np.array(word2[:,1,:]))
         data_prepared[chosen_joints[i]] = [seq1,seq2]
-
-    return data_prepared
-
-
-def words_preparation_old(word1, word2, path_jointlist):
-    """Prepares 2 signals for dtw to be counted on
-    Args:
-        word1 (list): First signal to count in dtw fcn
-        word2 (list): Second signal to count in dtw fcn
-        path_jointlist (string): A path to the joint_list.txt file, for example 'Sign_Language_BP/data/joint_list.txt'
-
-    Returns:
-        [list]: A list of prepared values for each joint separately
-    """
-
-    jointlist = get_jointlist(path_jointlist)
-    data_prepared = {}
-
-    for i in range(len(jointlist)):  # joint
-        seq1 = np.zeros(shape=(3, len(word1)), dtype=np.double)
-        seq2 = np.zeros(shape=(3, len(word2)), dtype=np.double)
-
-        for j in range(len(word1)):  # pocet snimku prvniho slova
-            # skip nechtenych joints
-            if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
-                break
-            if ('Spine' in jointlist[i]):
-                seq1[0][j] = word1[j][i][0]
-                # souradnice prvniho slova za podminky ramene
-                seq1[1][j] = word1[j][i][1]
-                seq1[2][j] = word1[j][i][2]
-            else:
-                seq1[0][j] = word1[j][i][0] - Spine[0][j]
-                # souradnice prvniho slova s odectenim souradnic ramen
-                seq1[1][j] = word1[j][i][1] - Spine[1][j]
-                seq1[2][j] = word1[j][i][2] - Spine[2][j]
-
-        for j in range(len(word2)):  # pocet snimku druheho slova
-            # skip nechtenych joints
-            if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
-                break
-            if ('Spine' in jointlist[i]):
-                seq2[0][j] = word2[j][i][0]
-                # souradnice druheho slova za podminky ramene
-                seq2[1][j] = word2[j][i][1]
-                seq2[2][j] = word2[j][i][2]
-            else:
-                seq2[0][j] = word2[j][i][0] - Spine[3][j]
-                # souradnice druheho slova s odectenim souradnic ramen
-                seq2[1][j] = word2[j][i][1] - Spine[4][j]
-                seq2[2][j] = word2[j][i][2] - Spine[5][j]
-
-        # skip nechtenych joints
-        if any(char.isdigit() for char in jointlist[i]) or ('Head' in jointlist[i]) or ('Shoulder' in jointlist[i]) or ('Hips' in jointlist[i]):
-            continue
-
-        # "zbaveni se" ucinku pohybu ramen na rukou - ulozeni jejich souradnic pro nasledne odecteni
-        if ('Spine' in jointlist[i]):
-            Spine = np.array([seq1[0], seq1[1], seq1[2],seq2[0], seq2[1], seq2[2]], dtype=object)
-            continue
-
-        data_prepared[jointlist[i]] = [seq1, seq2]
 
     return data_prepared
 
@@ -204,20 +156,6 @@ def compute_dtw(data_prepared, alg_type):
             dtw_dist.append(dtw_ndim.distance_fast(np.transpose(val[0]),np.transpose(val[1])))
 
     return np.mean(dtw_dist)
-
-
-def get_jointlist(path_jointlist):
-    """Returns joint list
-    Args:
-        path_jointlist (string) = path to the joint_list.txt file in pc
-
-    Returns:
-        [list]: List of joints
-    """
-    file_joints = open(path_jointlist, 'r')
-    joints = file_joints.readlines()
-    joints = [f.rstrip() for f in joints]
-    return joints
 
 
 def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph = 1):
@@ -815,9 +753,10 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
         return words_data
 
+
 if __name__ == '__main__':
 
-    paths = 'data/paths.txt'
+    paths = 'Sign_Language_BP/data/paths.txt'
 
     bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,path_output,joint_list,meta,traj = load(paths)
 
@@ -942,11 +881,11 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
-        with open("output_files/final/Lin, Eucl, to Longer/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Fourier/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
@@ -958,8 +897,9 @@ if __name__ == '__main__':
     compute_main = False
     if compute_main:
         alg_type = 'method_combination'
-        resample_method = 'interpolation'
+        resample_method = 'fourier'
         int_method = 'linear'
         distance_method = 'euclidean'
+        order = 'toShorter'
         start = timer()
-        distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order='toShorter', resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)
+        distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

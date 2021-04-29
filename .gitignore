@@ -1,6 +1,6 @@
 .vscode/
 .gitignore
-__pycache__
+__pycache__/
 dtw-master/
 dtw.egg-info/
 data_bvh/

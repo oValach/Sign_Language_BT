@@ -881,9 +881,9 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
-        with open("Sign_Language_BP/output_files/final/Fourier/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Fourier/toLonger/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
         with open("Sign_Language_BP/output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)

@@ -335,6 +335,7 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
         distance = np.zeros((int(count_limit(occurence_lower_limit)[0]), len(traj)))
     elif word_amount == -1: # computes with all words
         distance = np.zeros((len(traj), len(traj)))
+        DTW_differences = np.zeros((len(traj), len(traj)))
     elif word_amount != None: # computes with given number of words
         distance = np.zeros((int(word_amount), len(traj)))
 
@@ -367,20 +368,22 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
 
                     if resample_method == 'interpolation':
                         prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
-                        resampled_trajectories = resample(path_chosen_joints, prepared_trajectories, order, resample_method, int_method, graph=0)
+                        resampled_trajectories, DTW_difference = resample(path_chosen_joints, prepared_trajectories, order, resample_method, int_method, graph=0)
                         dist_output = compare(resampled_trajectories, dist = distance_method)
 
                     elif resample_method == 'fourier':
                         prepared_trajectories = prepare_trajectories(traj[i], traj[j], path_chosen_joints)
-                        resampled_trajectories = resample(path_chosen_joints, prepared_trajectories, order, resample_method, graph=0)
+                        resampled_trajectories, DTW_difference = resample(path_chosen_joints, prepared_trajectories, order, resample_method, graph=0)
                         dist_output = compare(resampled_trajectories, dist = distance_method)
 
                     else:
                         print('Wrong resample method entered.')
 
                     distance[i, j] = dist_output
+                    DTW_differences[i, j] = DTW_difference
                     try:
                         distance[j, i] = distance[i, j]
+                        DTW_differences[i, j] = DTW_difference
                     except:
                         pass
                 else:
@@ -389,6 +392,7 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
     # Save output data, graph and time info
     end = timer()
     time = end-start
+    DTW_validator = np.mean(DTW_differences)
 
     if (alg_type == 'dtw') or (alg_type == 'softdtw'):
         with open(os.path.join(path_output, 'time_{}.txt'.format(alg_type)),"w") as file:
@@ -406,6 +410,7 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
             int_method = 'fourier'
         with open(os.path.join(path_output, 'time_{}_{}_{}.txt'.format(int_method, distance_method, order)),"w") as file:
             file.write(str(time))
+            file.write("\n{} efficiency: {}".format(int_method, DTW_validator))
         with open(os.path.join(path_output, 'out_matrix_{}_{}_{}.pkl'.format(int_method, distance_method, order)), 'wb') as pk_out:
             pk.dump(distance, pk_out)
 
@@ -459,11 +464,16 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             word_second = 1
 
         # Computation
+        DTW_difference = []
         for key, val in data_prepared.items():
             item_new = np.zeros(shape=(2,3,len_words[word_second]))
+            item_old = val[word_to_resample] # for resample validation by DTW alg.
             for i in range(3):
                 item_new[word_to_resample][i] = signal.resample(val[word_to_resample][i], len_words[word_second])
                 item_new[word_second][i] = val[word_second][i]
+            
+            # Resample validation
+            DTW_difference.append(dtw_ndim.distance_fast(np.transpose(item_old),np.transpose(item_new[word_to_resample])))
 
             data_out[key] = item_new
 
@@ -502,7 +512,7 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             fig.legend(['Původní signál','Interpolovaný signál'], loc='upper right')
             plt.show()
 
-        return data_out
+        return data_out, np.mean(DTW_difference)
 
     if method == 'interpolation':
 
@@ -535,11 +545,16 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             word_second = 1
             
         # Computation
+        DTW_difference = []
         for key, val in data_prepared.items():
             item_new = np.zeros(shape=(2,3,len_words[word_second]))
+            item_old = val[word_to_resample] # for interpolation validation by DTW alg.
             for i in range(3):
                 item_new[word_to_resample][i] = interpolate_signal(val[word_to_resample][i], len_words[word_second], int_method)
                 item_new[word_second][i] = val[word_second][i]
+
+            # Interpolation validation
+            DTW_difference.append(dtw_ndim.distance_fast(np.transpose(item_old),np.transpose(item_new[word_to_resample])))
 
             data_out[key] = item_new
 
@@ -572,7 +587,7 @@ def resample(path_chosen_joints, data_prepared, order = 'notImportant', method =
             fig.legend(['Původní signál','Interpolovaný signál'], loc='upper right')
             plt.show()
 
-        return data_out
+        return data_out, np.mean(DTW_difference)
 
 
 def interpolate_signal(signal, final_length, int_method = 'linear'):
@@ -881,7 +896,7 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
         with open("Sign_Language_BP/output_files/final/Fourier/toLonger/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
@@ -894,10 +909,10 @@ if __name__ == '__main__':
         plt.show()
     # Compute one algorithm option on optional data size
     
-    compute_main = False
+    compute_main = True
     if compute_main:
         alg_type = 'method_combination'
-        resample_method = 'fourier'
+        resample_method = 'interpolation'
         int_method = 'linear'
         distance_method = 'euclidean'
         order = 'toShorter'

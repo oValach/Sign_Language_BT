@@ -41,7 +41,7 @@ cd /storage/plzen1/home/valacho/Sign_Language_BP/
 
 # python -m scaffan set --common-spreadsheet-file /storage/plzen1/home/$LOGNAME/projects/scaffan/experiments/metacentrum/SA_experiments.xlsx
 #python /storage/plzen1/home/javorek/bodyposition/devel/metacentrum/metasagittal.py > /storage/plzen1/home/javorek/meta_sdf_output_sagittal.txt
-python start_pearson.py > /storage/plzen1/home/valacho/output.txt
+python start_chebyshev.py > /storage/plzen1/home/valacho/output_toShorter.txt
 
 # kopirovani vystupnich dat z vypocetnicho uzlu do domovskeho adresare,
 # pokud by pri kopirovani doslo k chybe, nebude adresar SCRATCH vymazan pro moznost rucniho vyzvednuti dat

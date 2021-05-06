@@ -408,17 +408,17 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
     else:
         if resample_method == 'fourier': # If the Fourier transform is computed in the name of output file will be fourier, else there will be the type of interpolation
             int_method = 'fourier'
-        with open(os.path.join(path_output, 'time_{}_{}_{}.txt'.format(int_method, distance_method, order)),"w") as file:
+        with open(os.path.join(path_output, 'time_{}_{}.txt'.format(int_method, distance_method)),"w") as file:
             file.write(str(time))
             file.write("\n{} efficiency: {}".format(int_method, DTW_validator))
-        with open(os.path.join(path_output, 'out_matrix_{}_{}_{}.pkl'.format(int_method, distance_method, order)), 'wb') as pk_out:
+        with open(os.path.join(path_output, 'out_matrix_{}_{}.pkl'.format(int_method, distance_method)), 'wb') as pk_out:
             pk.dump(distance, pk_out)
 
         if graph:
             plt.imshow(distance, cmap='hot', interpolation='nearest')
             plt.colorbar()
-            plt.savefig(os.path.join(path_output, 'Figure_{}_{}_{}.eps'.format(int_method, distance_method, order)), dpi=300)
-            plt.savefig(os.path.join(path_output, 'Figure_{}_{}_{}.png'.format(int_method, distance_method, order)), dpi=300)
+            plt.savefig(os.path.join(path_output, 'Figure_{}_{}.eps'.format(int_method, distance_method)), dpi=300)
+            plt.savefig(os.path.join(path_output, 'Figure_{}_{}.png'.format(int_method, distance_method)), dpi=300)
     return distance
 
 
@@ -896,11 +896,11 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
-        with open("Sign_Language_BP/output_files/final/Fourier/toLonger/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Cubic,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin, Eucl, to Shorter/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Quadr,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
@@ -909,7 +909,7 @@ if __name__ == '__main__':
         plt.show()
     # Compute one algorithm option on optional data size
     
-    compute_main = True
+    compute_main = False
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'

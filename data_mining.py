@@ -896,7 +896,7 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
         with open("Sign_Language_BP/output_files/final/Cubic,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
@@ -909,12 +909,12 @@ if __name__ == '__main__':
         plt.show()
     # Compute one algorithm option on optional data size
     
-    compute_main = False
+    compute_main = True
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'euclidean'
+        distance_method = 'chebyshev'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

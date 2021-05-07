@@ -1,7 +1,6 @@
 from lib import bvh2glo_simple, SL_dict
 import os
 import sys
-import dcor
 import collections
 import similaritymeasures
 import numpy as np
@@ -285,7 +284,7 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
                     print('Please enter one of the offered options.')
             print('CHOOSE METRICS:')
             while(True):
-                distance_method = input('Enter 1: Euclidean\n 2: Hamming\n 3: Minkowsky\n 4: Mahalanobis\n 5: Canberra\n 6: Chebychev\n 7: BrayCurtis\n 8:Pearson correlation coefficient\n 9: Correlation distance\n 10: Area between curves\n')
+                distance_method = input('Enter 1: Euclidean\n 2: Hamming\n 3: Minkowsky\n 4: Mahalanobis\n 5: Canberra\n 6: Chebychev\n 7: BrayCurtis\n 8:Pearson correlation coefficient\n 9:Area between curves\n')
                 if distance_method == '1':
                     distance_method = 'euclidean'
                     break
@@ -311,9 +310,6 @@ def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', 
                     distance_method = 'pearson'
                     break
                 elif distance_method == '9':
-                    distance_method = 'correlationDistance'
-                    break
-                elif distance_method == '10':
                     distance_method = 'area'
                     break
                 else:
@@ -625,7 +621,7 @@ def compare(data_prepared, dist = 'euclidean'):
 
         joint_counter += 1
 
-        if (dist != 'pearson') and(dist != 'correlationDistance') and (dist != 'area'):
+        if (dist != 'pearson') and (dist != 'area'):
 
             for i in range(len(val[0])):
                 if dist == 'euclidean':
@@ -652,8 +648,6 @@ def compare(data_prepared, dist = 'euclidean'):
             for i in range(len(val[0])):
                 correlation[i] = np.corrcoef(val[0][i],val[1][i])[0][1]
             distances[joint_counter] = np.mean(correlation)
-        elif dist == 'correlationDistance':
-            distances[joint_counter] = dcor.distance_correlation(val[0],val[1])
         elif dist =='area':
             distances[joint_counter] = similaritymeasures.area_between_two_curves(val[0],val[1])
         else:
@@ -683,7 +677,7 @@ def count_limit(limit):
     return [sum_counts,counts]
 
 
-def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
+def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 0):
     """Analysis of given output matrix from one algorithm type
     Args:
         method_matrix [list]: an output matrix from fcn compute
@@ -701,8 +695,12 @@ def analyze_result(method_matrix, noOfminimuminstances, graph = 0):
 
     words_data = np.empty(shape=(noOfWords,len(top_counts)), dtype=object)
 
-    matrix_sorted = matrix_chosen.argsort()
-    
+    if (tested_metrics == 'pearson') and (tested_metrics == 'braycurtis'): # bigger value -> better result
+        matrix_sorted = (-matrix_chosen).argsort()
+    else: # smaller value -> better result
+        matrix_sorted = matrix_chosen.argsort()
+    #matrix_sorted = matrix_chosen.argsort()
+
     counts_dict = {}
     
     for i in range(noOfWords):
@@ -896,25 +894,29 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
-        with open("Sign_Language_BP/output_files/final/Cubic,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
+        
+        tested_metrics1 = 'chebyshev'
+        tested_metrics2 = 'correlationDistance'
+
+        with open("Sign_Language_BP/output_files/final/Lin,Chebyshev/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Quadr,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
-        analyze_result(output_1, minOf_instances, graph=1)
-        analyze_result(output_2, minOf_instances, graph=1)
+        analyze_result(tested_metrics1, output_1, minOf_instances, graph=1)
+        analyze_result(tested_metrics2, output_2, minOf_instances, graph=1)
         plt.show()
+
     # Compute one algorithm option on optional data size
-    
     compute_main = True
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'chebyshev'
+        distance_method = 'braycurtis'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

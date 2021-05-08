@@ -5,7 +5,7 @@ paths = 'data/paths_.txt'
 bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,path_metadata,path_trajectory,path_output,joint_list,meta,traj = load(paths)
 
 alg_type = 'method_combination'
-resample_method = 'interpolation'
+resample_method = 'fourier'
 int_method = 'linear'
 distance_method = 'mahalanobis'
 order = 'toShorter'

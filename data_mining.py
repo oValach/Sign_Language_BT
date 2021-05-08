@@ -897,15 +897,15 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
         
         tested_metrics1 = 'minkowsky'
-        tested_metrics2 = 'mahalanobis'
+        tested_metrics2 = 'euclidean'
 
-        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Area/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin,Mahalanobis/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Canberra/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
@@ -914,7 +914,7 @@ if __name__ == '__main__':
         plt.show()
 
     # Compute one algorithm option on optional data size
-    compute_main = True
+    compute_main = False
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'

@@ -631,9 +631,12 @@ def compare(data_prepared, dist = 'euclidean'):
                 elif dist == 'minkowsky':
                     distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=3)
                 elif dist == 'mahalanobis':
+                    S = np.random.randn(3, 3)
+                    S = np.dot(S, S.T) #ensure positive semi-definite
+
                     V = np.cov(np.array([val[0][:,i],val[1][:,i]]).T)
                     IV = np.linalg.pinv(V)
-                    distances[joint_counter] += spatial.distance.mahalanobis(val[0][:,i],val[1][:,i], IV)
+                    distances[joint_counter] += spatial.distance.mahalanobis(val[0][:,i],val[1][:,i], S)
                 elif dist == 'canberra':
                     distances[joint_counter] += spatial.distance.canberra(val[0][:,i],val[1][:,i])
                 elif dist == 'braycurtis':
@@ -695,12 +698,12 @@ def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 
 
     words_data = np.empty(shape=(noOfWords,len(top_counts)), dtype=object)
 
-    if (tested_metrics == 'pearson') and (tested_metrics == 'braycurtis'): # bigger value -> better result
+    if (tested_metrics == 'pearson'): # bigger value -> better result
         matrix_sorted = (-matrix_chosen).argsort()
     else: # smaller value -> better result
         matrix_sorted = matrix_chosen.argsort()
-    #matrix_sorted = matrix_chosen.argsort()
 
+    matrix_sorted_1 = matrix_chosen.argsort()
     counts_dict = {}
     
     for i in range(noOfWords):
@@ -894,15 +897,15 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
         
-        tested_metrics1 = 'chebyshev'
-        tested_metrics2 = 'correlationDistance'
+        tested_metrics1 = 'minkowsky'
+        tested_metrics2 = 'mahalanobis'
 
-        with open("Sign_Language_BP/output_files/final/Lin,Chebyshev/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Mahalanobis/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
@@ -916,7 +919,7 @@ if __name__ == '__main__':
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'braycurtis'
+        distance_method = 'mahalanobis'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

@@ -157,7 +157,7 @@ def compute_dtw(data_prepared, alg_type):
     return np.mean(dtw_dist)
 
 
-def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph = 1):
+def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', order='toShorter', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph=1):
     """Computes DTW distance between 1 word and all other words
     Args:
         word (string) = a given word
@@ -174,28 +174,92 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
     try:
         idx = sign_name_list.index(word)
     except:
-        print('Slovo nenalezeno.')
+        print('Word not found.')
         sys.exit()
 
     occurences = sign_name_list.count(word)
 
-    print('{} vyskytu slova "{}"'.format(occurences, word))
-    word_index = input('Index instance slova na testovani (0,{}): '.format(occurences-1))
+    print('{} instances of word "{}"'.format(occurences, word))
+    word_index = input('Index of word instance to test (0,{}): '.format(occurences-1))
     word_traj = traj[idx+int(word_index)]
 
     distance = np.zeros((len(traj)))
     for i in range(len(traj)):
-        prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
-        distance[i] = (compute_dtw(prepared_trajectories, alg_type))
 
-    sorted_distances = (distance.argsort())
-    sorted_words = [meta[item][0] for item in sorted_distances]
-    bestentered = sorted_distances[:number_of_mins-1]
+        if alg_type == 'dtw': # Classic DTW algorithm
+            prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
+            distance[i] = (compute_dtw(prepared_trajectories, 'dtw'))
+
+        elif alg_type == 'softdtw':# Differentiable SoftDTW version of DTW
+            prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
+            distance[i] = (compute_dtw(prepared_trajectories, 'softdtw'))
+
+        elif alg_type == 'method_combination': # Signal resample and distance computation separately
+
+            if resample_method == 'interpolation':
+                prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
+                resampled_trajectories,_ = resample(path_chosen_joints, prepared_trajectories, order, resample_method, int_method, 0)
+                dist_output = compare(resampled_trajectories, dist = distance_method)
+
+            elif resample_method == 'fourier':
+                prepared_trajectories = prepare_trajectories(traj[i], word_traj, path_chosen_joints)
+                resampled_trajectories,_ = resample(path_chosen_joints, prepared_trajectories, order, resample_method, 0)
+                dist_output = compare(resampled_trajectories, dist = distance_method)
+
+            else:
+                print('Wrong resample method entered.')
+
+            distance[i] = dist_output
+
+    if (distance_method == 'pearson'): # bigger value -> better result
+        matrix_sorted = (-distance).argsort()
+    else: # smaller value -> better result
+        matrix_sorted = distance.argsort()
+
+    sorted_words = [meta[item][0] for item in matrix_sorted]
+    bestentered = matrix_sorted[:number_of_mins-1]
 
     best100_occurences = sorted_words[:99].count(word)
     best500_occurences = sorted_words[:499].count(word)
 
     if graph:
+        distance_copy = distance.copy()
+        if distance_method == 'pearson':
+            best_traj = np.zeros(shape=[15], dtype=object)
+            for k in range(15):
+                max_idx = np.argmax(distance_copy)
+                distance_copy[max_idx] = 0
+                max_idx = np.argmax(distance_copy)
+                tested_traj = np.array(word_traj[:, 3, :])
+                best_traj[k] = np.array(traj[max_idx][:, 3, :]) # plotting one joint
+        else:
+            best_traj = np.zeros(shape=[15], dtype=object)
+            for k in range(15):
+                min_idx = np.argmin(distance_copy)
+                distance_copy[min_idx] = 10000
+                min_idx = np.argmin(distance_copy)
+                tested_traj = np.array(word_traj[:, 3, :])
+                best_traj[k] = np.array(traj[min_idx][:, 3, :]) # plotting one joint
+        
+        point_distance = np.zeros(shape=[15])
+        for q in range(15):
+            point_distance[q] = dtw_ndim.distance_fast(tested_traj,best_traj[q])
+        print(point_distance)
+        print('\n{}'.format(np.mean(point_distance)))
+
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        ax.plot(tested_traj[:,0],tested_traj[:,1],tested_traj[:,2], marker='*', color = 'k', linewidth=0, markersize=4)
+        ax.plot(best_traj[0][:,0],best_traj[0][:,1],best_traj[0][:,2], marker='*', color = 'r', linewidth=0, markersize=4)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.xaxis.set_tick_params(labelsize=7)
+        ax.yaxis.set_tick_params(labelsize=7)
+        ax.zaxis.set_tick_params(labelsize=7)
+        ax.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
+
+
         hist_data = [int(item == word) for item in sorted_words]
         hist_data_plot = list()
         idx1 = 0
@@ -204,6 +268,7 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
             hist_data_plot.append(hist_data[idx1:idx2].count(1))
             idx1 += 36
             idx2 += 36
+        plt.figure()
         plt.barh(np.arange(len(hist_data_plot)).tolist(),hist_data_plot)
         plt.xlabel('Vyskytu znaku "{}" v oblasti'.format(word))
         plt.ylabel('Seřazený dataset vzdáleností rozdělen do 37 oblastí')
@@ -212,17 +277,17 @@ def one_word_dtw(word, path_jointlist, number_of_mins, alg_type = 'dtw', graph =
         plt.grid()
         plt.show()
 
-    print('\nSerazene vysledky {} slova "{}":'.format(alg_type, word))
-    print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(100,best100_occurences))
-    print('Vyskytu slova v {} nejmensich vysledcich: {}'.format(500,best500_occurences))
-    print('Nejlepších {} shod s {}.instanci slova: {}'.format(number_of_mins,word_index,word))
+    print('\nSorted results from {} of word "{}":'.format(alg_type, word))
+    print('Occurences of word in {} best matches: {}'.format(100,best100_occurences))
+    print('Occurences of word in {} best matches: {}'.format(500,best500_occurences))
+    print('Best {} matches with {}.instance of word: {}'.format(number_of_mins,word_index,word))
     for item in bestentered:
         print('{}: {}'.format(meta[item], distance[item]))
     
     return bestentered
 
 
-def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'notImportant', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
+def compute(path_output, path_trajectory, path_chosen_joints, alg_type = 'dtw', order = 'toShorter', resample_method = 'interpolation', int_method = 'linear', distance_method = 'euclidean', graph = 0, word_amount = None, occurence_lower_limit = None):
     """Computes distance between given number of words and all others
     Args:
         word_amount [int]: a number of words to count the distance, takes all if the number equals -1
@@ -703,7 +768,6 @@ def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 
     else: # smaller value -> better result
         matrix_sorted = matrix_chosen.argsort()
 
-    matrix_sorted_1 = matrix_chosen.argsort()
     counts_dict = {}
     
     for i in range(noOfWords):
@@ -767,7 +831,25 @@ def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 
         plt.legend(['','Rozdíl významu', 'Shoda významu'], bbox_to_anchor=(-0.1,1.02,0.6,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3)
         #plt.show()
 
-        return words_data
+    return words_data
+
+
+def compare_to_DTW(DTW_matrix, method_matrix):
+        max_DTW = np.max(DTW_matrix)
+        DTW_normalized = np.array(DTW_matrix)/max_DTW
+
+        max_method_matrix = np.max(method_matrix)
+        method_normalized = np.array(method_matrix)/max_method_matrix
+
+        diff = np.subtract(DTW_normalized, method_normalized)
+
+        D_matrix = diff.clip(min=0)
+        D1 = sum(sum(D_matrix))
+
+        D_matrix = diff.clip(max=0)
+        D2 = sum(sum(D_matrix))
+
+        return D1,D2, abs(D1)+abs(D2)
 
 
 if __name__ == '__main__':
@@ -823,10 +905,15 @@ if __name__ == '__main__':
         print((unique_count))
 
     # DTW of one word to all others
-    test_dtw_one_word = False
-    if test_dtw_one_word: 
-        word = 'n_2'
-        one_word_dtw(word, path_jointlist, 1, 'softdtw', graph=1)
+    test_one_word = True
+    if test_one_word: 
+        word = 'zitra'
+        alg_type = 'method_combination'
+        resample_method = 'interpolation'
+        int_method = 'linear'
+        distance_method = 'pearson'
+        order = 'toShorter'
+        compute_one_word(word, path_jointlist, 10, alg_type, order, resample_method, int_method, distance_method, graph=1)
     
     # Testing fcn of resample only
     test_resample = False
@@ -903,23 +990,33 @@ if __name__ == '__main__':
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Hamming/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/F,Canberra/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Pearson/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
-        analyze_result(tested_metrics1, output_1, minOf_instances, graph=1)
-        analyze_result(tested_metrics2, output_2, minOf_instances, graph=1)
+        analyze_result(tested_metrics1, output_1, minOf_instances, graph=0)
+        analyze_result(tested_metrics2, output_2, minOf_instances, graph=0)
         plt.show()
 
+    DTW_comparison = False
+    if DTW_comparison:
+        with open("Sign_Language_BP/output_files/final/DTW/all/out_matrix.pkl", 'rb') as pickle_file:
+            output_DTW = pk.load(pickle_file)
+        with open("Sign_Language_BP/output_files/final/Lin,Pearson/out_matrix.pkl", 'rb') as pickle_file:
+            output_metrics = pk.load(pickle_file)
+
+        output = compare_to_DTW(output_DTW, output_metrics)
+        print(output)
+
     # Compute one algorithm option on optional data size
-    compute_main = True
+    compute_main = False
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'hamming'
+        distance_method = 'pearson'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

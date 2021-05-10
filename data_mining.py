@@ -694,7 +694,7 @@ def compare(data_prepared, dist = 'euclidean'):
                 elif dist == 'hamming':
                     distances[joint_counter] += manhattan_distances([val[0][:,i]],[val[1][:,i]])
                 elif dist == 'minkowsky':
-                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=3)
+                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=10)
                 elif dist == 'mahalanobis':
                     S = np.random.randn(3, 3)
                     S = np.dot(S, S.T) #ensure positive semi-definite

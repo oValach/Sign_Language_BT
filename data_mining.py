@@ -905,7 +905,7 @@ if __name__ == '__main__':
         print((unique_count))
 
     # DTW of one word to all others
-    test_one_word = True
+    test_one_word = False
     if test_one_word: 
         word = 'zitra'
         alg_type = 'method_combination'
@@ -984,20 +984,20 @@ if __name__ == '__main__':
                     print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
         
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Mahalanobis/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/F,Pearson/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Hamming/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
-        analyze_result(tested_metrics1, output_1, minOf_instances, graph=0)
-        analyze_result(tested_metrics2, output_2, minOf_instances, graph=0)
+        analyze_result(tested_metrics1, output_1, minOf_instances, graph=1)
+        analyze_result(tested_metrics2, output_2, minOf_instances, graph=1)
         plt.show()
 
     DTW_comparison = False
@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'pearson'
+        distance_method = 'hamming'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

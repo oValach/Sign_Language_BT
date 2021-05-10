@@ -928,8 +928,8 @@ if __name__ == '__main__':
         resample_out = resample(path_chosen_joints, prepared_trajectories, 'toLonger', 'interpolation', 'cubic', graph=1)
 
     # Testing fcn of signal comparison
-    test_signal_comparison = False
-    if test_signal_comparison:
+    test_metrics = False
+    if test_metrics:
         joint = 3
         word1 = traj[900]
         word1_meta = meta[900]
@@ -943,45 +943,6 @@ if __name__ == '__main__':
         distance = compare(resample_out, dist = kind)
 
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
-
-    # Analyze different results for different algorithm methods
-    test_interps = False
-    if test_interps: # testovaci skript
-        with open("Sign_Language_BP/output_files/final/DTW/DTW.pkl", 'rb') as pickle_file:
-            linear = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/SoftDtw/SoftDTW.pkl", 'rb') as pickle_file:
-            quadr = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Interp-Cubic,Euclidean/cubic+interpolation+euclidean.pkl", 'rb') as pickle_file:
-            cubic = pk.load(pickle_file)
-
-        sorted_lin = linear.argsort() # serazene 2D pole vzdalenosti s indexy
-        sorted_quadr = quadr.argsort()
-        sorted_cubic = cubic.argsort()
-
-        linVSquadr = sorted_lin==sorted_quadr # porovnani 2 metod vuci sobe, True/False matice
-        linVScubic = sorted_lin==sorted_cubic
-        quadrVScubic = sorted_quadr==sorted_cubic
-
-        unique, linVSquadrCounts = np.unique(linVSquadr, return_counts=True) # pocet shod a rozdilu dvou danych metod 
-        dict(zip(unique, linVSquadrCounts)) # 27 612 False, 972 388 True
-
-        unique, linVScubicCounts = np.unique(linVScubic, return_counts=True)
-        dict(zip(unique, linVScubicCounts)) # 27 628 False, 972 372 True
-
-        unique, quadrVScubicCounts = np.unique(quadrVScubic, return_counts=True)
-        dict(zip(unique, quadrVScubicCounts)) # 736 False, 999 264 True
-
-        for i in range(len(linVSquadr)): # hledam mista, kde se vyskytuje vice rozdilu za sebou a zjistuji, ze jsou to vetsinou pouze prehozene dve slova vuci sobe
-            for j in range(len(linVSquadr[i])):
-                if linVSquadr[i,j] == False and linVSquadr[i,j-1] == False and linVSquadr[i,j+1] == False:# and linVSquadr[i,j+2] == False and linVSquadr[i,j+3] == False and linVSquadr[i,j+4] == False:
-                    print(sorted_lin[i,j:j+5])     # print oblasti indexu s prohozenymi znaky
-                    print(sorted_quadr[i,j:j+5])
-                    words = [meta[item][0] for item in sorted_lin[i,j:j+5]] 
-                    print(words)                    # print vyznamu prohozenych znaku
-                    words = [meta[item][0] for item in sorted_quadr[i,j:j+5]]
-                    print(words)
-                    print([linear[i][item] for item in sorted_lin[i,j:j+5]])   # print vzdalenostnich hodnot pro dana slova
-                    print([quadr[i][item] for item in sorted_quadr[i,j:j+5]])
 
     # Analysis of one method output matrix from compute fcn
     method_analyze = True
@@ -1000,14 +961,14 @@ if __name__ == '__main__':
         analyze_result(tested_metrics2, output_2, minOf_instances, graph=1)
         plt.show()
 
-    DTW_comparison = False
-    if DTW_comparison:
+    Outputs_comparison = False
+    if Outputs_comparison:
         with open("Sign_Language_BP/output_files/final/DTW/all/out_matrix.pkl", 'rb') as pickle_file:
-            output_DTW = pk.load(pickle_file)
+            output_1 = pk.load(pickle_file)
         with open("Sign_Language_BP/output_files/final/Lin,Pearson/out_matrix.pkl", 'rb') as pickle_file:
-            output_metrics = pk.load(pickle_file)
+            output_2 = pk.load(pickle_file)
 
-        output = compare_to_DTW(output_DTW, output_metrics)
+        output = compare_to_DTW(output_1, output_2)
         print(output)
 
     # Compute one algorithm option on optional data size

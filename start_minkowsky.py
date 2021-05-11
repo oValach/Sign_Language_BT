@@ -7,7 +7,7 @@ bvh_dir,bvh_dict,source_dir,path_jointlist,path_chosen_joints,path_dictionary,pa
 alg_type = 'method_combination'
 resample_method = 'fourier'
 int_method = 'linear'
-distance_method = 'minkowsky8'
+distance_method = 'minkowsky6'
 order = 'toShorter'
 
 distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, 

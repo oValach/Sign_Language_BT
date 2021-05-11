@@ -8,8 +8,9 @@ z = [1,2,3,4,5,6,7,8,9,10]
 
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [2,3,4,5,6,7,8,9,10,22]
-c = [20,21,22,23,24,25,26,27,28,40]
+c = [23,24,25,26,27,28,40]
 
+"""
 plt.style.use('seaborn-notebook')
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -24,7 +25,12 @@ ax.yaxis.set_tick_params(labelsize=7)
 ax.zaxis.set_tick_params(labelsize=7)
 ax.legend(['A','B', 'C'],loc='best')
 plt.show()
+"""
 
+D = np.array([0,0,0], dtype=object)
+D[0] = a
+D[1] = b
+D[2] = c
 
 correlation = np.corrcoef(a,c)
 

@@ -1,6 +1,7 @@
 from lib import bvh2glo_simple, SL_dict
 import os
 import sys
+import copy
 import collections
 import similaritymeasures
 import numpy as np
@@ -682,6 +683,12 @@ def compare(data_prepared, dist = 'euclidean'):
     distances = np.zeros(shape=len(data_prepared))
     joint_counter = -1
 
+    # extracting the minkowsky p parameter from string dist
+    dist_given = copy.copy(dist)
+    dist = ''.join(i for i in dist_given if i.isalpha())
+    if dist == 'minkowsky':
+        p = int(''.join(filter(str.isdigit, dist_given)))
+
     for _, val in data_prepared.items():
 
         joint_counter += 1
@@ -694,13 +701,10 @@ def compare(data_prepared, dist = 'euclidean'):
                 elif dist == 'hamming':
                     distances[joint_counter] += manhattan_distances([val[0][:,i]],[val[1][:,i]])
                 elif dist == 'minkowsky':
-                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=13)
+                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=p)
                 elif dist == 'mahalanobis':
                     S = np.random.randn(3, 3)
                     S = np.dot(S, S.T) #ensure positive semi-definite
-
-                    V = np.cov(np.array([val[0][:,i],val[1][:,i]]).T)
-                    IV = np.linalg.pinv(V)
                     distances[joint_counter] += spatial.distance.mahalanobis(val[0][:,i],val[1][:,i], S)
                 elif dist == 'canberra':
                     distances[joint_counter] += spatial.distance.canberra(val[0][:,i],val[1][:,i])
@@ -945,13 +949,13 @@ if __name__ == '__main__':
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
         
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Hamming/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Minkowsky13/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
         with open("Sign_Language_BP/output_files/final/F,Minkowsky10/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
@@ -961,8 +965,8 @@ if __name__ == '__main__':
         analyze_result(tested_metrics2, output_2, minOf_instances, graph=1)
         plt.show()
 
-    Outputs_comparison = False
-    if Outputs_comparison:
+    outputs_comparison = False
+    if outputs_comparison:
         with open("Sign_Language_BP/output_files/final/DTW/all/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
         with open("Sign_Language_BP/output_files/final/Lin,Pearson/out_matrix.pkl", 'rb') as pickle_file:
@@ -972,12 +976,12 @@ if __name__ == '__main__':
         print(output)
 
     # Compute one algorithm option on optional data size
-    compute_main = False
+    compute_main = True
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'hamming'
+        distance_method = 'minkowsky7'
         order = 'toShorter'
         start = timer()
         distance_matrix = compute(path_output, path_trajectory, path_chosen_joints, alg_type=alg_type, order=order, resample_method=resample_method, int_method=int_method, distance_method=distance_method, graph = 1, word_amount=-1)

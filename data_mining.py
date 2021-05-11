@@ -694,7 +694,7 @@ def compare(data_prepared, dist = 'euclidean'):
                 elif dist == 'hamming':
                     distances[joint_counter] += manhattan_distances([val[0][:,i]],[val[1][:,i]])
                 elif dist == 'minkowsky':
-                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=10)
+                    distances[joint_counter] += spatial.distance.minkowski(val[0][:,i],val[1][:,i], p=13)
                 elif dist == 'mahalanobis':
                     S = np.random.randn(3, 3)
                     S = np.dot(S, S.T) #ensure positive semi-definite
@@ -951,9 +951,9 @@ if __name__ == '__main__':
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Mahalanobis/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Hamming/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin,Hamming/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Minkowsky10/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20

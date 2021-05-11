@@ -957,7 +957,7 @@ if __name__ == '__main__':
 
         with open("Sign_Language_BP/output_files/final/F,Minkowsky12/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/F,Minkowsky10/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Minkowsky3/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20

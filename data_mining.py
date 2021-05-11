@@ -949,13 +949,13 @@ if __name__ == '__main__':
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
         
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Minkowsky13/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Minkowsky12/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
         with open("Sign_Language_BP/output_files/final/F,Minkowsky10/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
@@ -976,7 +976,7 @@ if __name__ == '__main__':
         print(output)
 
     # Compute one algorithm option on optional data size
-    compute_main = True
+    compute_main = False
     if compute_main:
         alg_type = 'method_combination'
         resample_method = 'interpolation'

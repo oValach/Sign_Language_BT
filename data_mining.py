@@ -911,11 +911,11 @@ if __name__ == '__main__':
     # DTW of one word to all others
     test_one_word = False
     if test_one_word: 
-        word = 'zitra'
-        alg_type = 'method_combination'
+        word = 'bude'
+        alg_type = 'softdtw'
         resample_method = 'interpolation'
         int_method = 'linear'
-        distance_method = 'pearson'
+        distance_method = 'euclidean'
         order = 'toShorter'
         compute_one_word(word, path_jointlist, 10, alg_type, order, resample_method, int_method, distance_method, graph=1)
     
@@ -955,9 +955,9 @@ if __name__ == '__main__':
         tested_metrics1 = 'hamming'
         tested_metrics2 = 'canberra'
 
-        with open("Sign_Language_BP/output_files/final/F,Minkowsky12/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky3/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/F,Minkowsky3/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky7/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20
@@ -969,7 +969,7 @@ if __name__ == '__main__':
     if outputs_comparison:
         with open("Sign_Language_BP/output_files/final/DTW/all/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin,Pearson/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/SoftDTW/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         output = compare_to_DTW(output_1, output_2)

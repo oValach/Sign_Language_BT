@@ -227,20 +227,26 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         distance_copy = distance.copy()
         if distance_method == 'pearson':
             best_traj = np.zeros(shape=[15], dtype=object)
+            best_traj1 = np.zeros(shape=[15], dtype=object)
             for k in range(15):
                 max_idx = np.argmax(distance_copy)
                 distance_copy[max_idx] = 0
                 max_idx = np.argmax(distance_copy)
-                tested_traj = np.array(word_traj[:, 3, :])
-                best_traj[k] = np.array(traj[max_idx][:, 3, :]) # plotting one joint
+                tested_traj = np.array(word_traj[:, 5, :])
+                best_traj[k] = np.array(traj[max_idx][:, 5, :]) # plotting one joint
+                tested_traj1 = np.array(word_traj[:, 3, :])
+                best_traj1[k] = np.array(traj[max_idx][:, 3, :]) # plotting one joint
         else:
             best_traj = np.zeros(shape=[15], dtype=object)
+            best_traj1 = np.zeros(shape=[15], dtype=object)
             for k in range(15):
                 min_idx = np.argmin(distance_copy)
                 distance_copy[min_idx] = 10000
                 min_idx = np.argmin(distance_copy)
-                tested_traj = np.array(word_traj[:, 3, :])
-                best_traj[k] = np.array(traj[min_idx][:, 3, :]) # plotting one joint
+                tested_traj = np.array(word_traj[:, 5, :])
+                best_traj[k] = np.array(traj[min_idx][:, 5, :]) # plotting one joint
+                tested_traj1 = np.array(word_traj[:, 3, :])
+                best_traj1[k] = np.array(traj[min_idx][:, 3, :]) # plotting one joint
         
         point_distance = np.zeros(shape=[15])
         for q in range(15):
@@ -248,17 +254,32 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         print(point_distance)
         print('\n{}'.format(np.mean(point_distance)))
 
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        fig = plt.figure(figsize=plt.figaspect(2))
+
+        ax = fig.add_subplot(2, 1, 1, projection='3d')
         ax.plot(tested_traj[:,0],tested_traj[:,1],tested_traj[:,2], marker='*', color = 'k', linewidth=0, markersize=4)
         ax.plot(best_traj[0][:,0],best_traj[0][:,1],best_traj[0][:,2], marker='*', color = 'r', linewidth=0, markersize=4)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
-        ax.xaxis.set_tick_params(labelsize=7)
-        ax.yaxis.set_tick_params(labelsize=7)
+        ax.set_title('Pravé zápěstí')
+        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
         ax.zaxis.set_tick_params(labelsize=7)
-        ax.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
+        ax.view_init(25, 60)
+
+        ax = fig.add_subplot(2, 1, 2, projection='3d')
+        ax.plot(tested_traj1[:,0],tested_traj1[:,1],tested_traj1[:,2], marker='*', color = 'k', linewidth=0, markersize=4)
+        ax.plot(best_traj1[0][:,0],best_traj1[0][:,1],best_traj1[0][:,2], marker='*', color = 'r', linewidth=0, markersize=4)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.set_title('Pravá pažní kost')
+        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
+        ax.zaxis.set_tick_params(labelsize=7)
+        ax.view_init(25, 60)
+        fig.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
 
 
         hist_data = [int(item == word) for item in sorted_words]
@@ -278,13 +299,16 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         plt.grid()
         plt.show()
 
+    arr_graph = []
     print('\nSorted results from {} of word "{}":'.format(alg_type, word))
     print('Occurences of word in {} best matches: {}'.format(100,best100_occurences))
     print('Occurences of word in {} best matches: {}'.format(500,best500_occurences))
     print('Best {} matches with {}.instance of word: {}'.format(number_of_mins,word_index,word))
     for item in bestentered:
         print('{}: {}'.format(meta[item], distance[item]))
+        arr_graph.append(meta[item][0])
     
+    print(arr_graph)
     return bestentered
 
 
@@ -909,15 +933,15 @@ if __name__ == '__main__':
         print((unique_count))
 
     # DTW of one word to all others
-    test_one_word = False
+    test_one_word = True
     if test_one_word: 
-        word = 'bude'
-        alg_type = 'softdtw'
-        resample_method = 'interpolation'
+        word = 'zitra'
+        alg_type = 'dtw'
+        resample_method = 'fourier'
         int_method = 'linear'
-        distance_method = 'euclidean'
+        distance_method = 'hamming'
         order = 'toShorter'
-        compute_one_word(word, path_jointlist, 10, alg_type, order, resample_method, int_method, distance_method, graph=1)
+        compute_one_word(word, path_jointlist, 41, alg_type, order, resample_method, int_method, distance_method, graph=1)
     
     # Testing fcn of resample only
     test_resample = False
@@ -949,7 +973,7 @@ if __name__ == '__main__':
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = True
+    method_analyze = False
     if method_analyze:
         
         tested_metrics1 = 'hamming'

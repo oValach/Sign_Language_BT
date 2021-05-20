@@ -40,7 +40,6 @@ source activate BPenv
 cd /storage/plzen1/home/valacho/Sign_Language_BP/
 
 # python -m scaffan set --common-spreadsheet-file /storage/plzen1/home/$LOGNAME/projects/scaffan/experiments/metacentrum/SA_experiments.xlsx
-python start_minkowsky.py
 python start_euclidean.py
 
 # kopirovani vystupnich dat z vypocetnicho uzlu do domovskeho adresare,

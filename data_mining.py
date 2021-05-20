@@ -128,7 +128,9 @@ def prepare_trajectories(word1, word2, path_chosen_joints):
     data_prepared = {}
     for i in range(len(chosen_joints)):
         seq1 = np.transpose(np.array(word1[:,chosen_joints[i],:]) - np.array(word1[:,1,:]))
+        seq1 = seq1-np.mean(seq1)
         seq2 = np.transpose(np.array(word2[:,chosen_joints[i],:]) - np.array(word2[:,1,:]))
+        seq2 = seq2-np.mean(seq2)
         data_prepared[chosen_joints[i]] = [seq1,seq2]
 
     return data_prepared
@@ -171,6 +173,7 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         [list]: List of [number_of_mins] minimum values found with information
     """
 
+    frame_range_list = [m[2] for m in meta if m[0]==word]
     sign_name_list = [m[0] for m in meta]
     try:
         idx = sign_name_list.index(word)
@@ -218,6 +221,17 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         matrix_sorted = distance.argsort()
 
     sorted_words = [meta[item][0] for item in matrix_sorted]
+    sorted_frame_ranges = [[meta[item][2],item] for item in matrix_sorted]
+
+    # indexing specially the word duplicate meanings to compare their final order between multiple methods - from arr_graph
+    idx_of_oneofnearest = -1
+    for item in sorted_frame_ranges:
+        idx_of_oneofnearest += 1
+        if sorted_words[idx_of_oneofnearest] == word:
+            idx = frame_range_list.index(item[0])
+            meta[item[1]][0] = meta[item[1]][0]+' #'+str(idx+1)
+
+
     bestentered = matrix_sorted[:number_of_mins-1]
 
     best100_occurences = sorted_words[:99].count(word)
@@ -263,8 +277,8 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.set_title('Pravé zápěstí')
-        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
-        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
+        ax.xaxis.set_tick_params(labelsize=7, rotation=20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=-20)
         ax.zaxis.set_tick_params(labelsize=7)
         ax.view_init(25, 60)
 
@@ -275,8 +289,8 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.set_title('Pravá pažní kost')
-        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
-        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
+        ax.xaxis.set_tick_params(labelsize=7, rotation=20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=-20)
         ax.zaxis.set_tick_params(labelsize=7)
         ax.view_init(25, 60)
         fig.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
@@ -299,11 +313,11 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         plt.grid()
         plt.show()
 
-    arr_graph = []
     print('\nSorted results from {} of word "{}":'.format(alg_type, word))
     print('Occurences of word in {} best matches: {}'.format(100,best100_occurences))
     print('Occurences of word in {} best matches: {}'.format(500,best500_occurences))
     print('Best {} matches with {}.instance of word: {}'.format(number_of_mins,word_index,word))
+    arr_graph = []
     for item in bestentered:
         print('{}: {}'.format(meta[item], distance[item]))
         arr_graph.append(meta[item][0])
@@ -738,6 +752,7 @@ def compare(data_prepared, dist = 'euclidean'):
                     distances[joint_counter] += spatial.distance.chebyshev(val[0][:,i],val[1][:,i])
                 else:
                     print('Wrong distance metrics entered.')
+                    sys.exit()
 
         elif dist == 'pearson':
             correlation = np.zeros(shape=len(val[0]))
@@ -748,6 +763,7 @@ def compare(data_prepared, dist = 'euclidean'):
             distances[joint_counter] = similaritymeasures.area_between_two_curves(val[0],val[1])
         else:
             print('Wrong distance metrics entered.')
+
 
     return np.mean(distances)
 
@@ -936,12 +952,12 @@ if __name__ == '__main__':
     test_one_word = True
     if test_one_word: 
         word = 'zitra'
-        alg_type = 'dtw'
+        alg_type = 'method_combination'
         resample_method = 'fourier'
         int_method = 'linear'
         distance_method = 'hamming'
         order = 'toShorter'
-        compute_one_word(word, path_jointlist, 41, alg_type, order, resample_method, int_method, distance_method, graph=1)
+        compute_one_word(word, path_jointlist, 41, alg_type, order, resample_method, int_method, distance_method, graph=0)
     
     # Testing fcn of resample only
     test_resample = False

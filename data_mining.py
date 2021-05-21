@@ -277,8 +277,8 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.set_title('Pravé zápěstí')
-        ax.xaxis.set_tick_params(labelsize=7, rotation=20)
-        ax.yaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
         ax.zaxis.set_tick_params(labelsize=7)
         ax.view_init(25, 60)
 
@@ -289,11 +289,13 @@ def compute_one_word(word, path_jointlist, number_of_mins, alg_type = 'dtw', ord
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         ax.set_title('Pravá pažní kost')
-        ax.xaxis.set_tick_params(labelsize=7, rotation=20)
-        ax.yaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.xaxis.set_tick_params(labelsize=7, rotation=-20)
+        ax.yaxis.set_tick_params(labelsize=7, rotation=20)
         ax.zaxis.set_tick_params(labelsize=7)
         ax.view_init(25, 60)
-        fig.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
+        #fig.legend(['1. instance slova {}'.format(word),'2. instance slova {}'.format(word)])
+        fig.legend(['1. instance slova zítra','2. instance slova zítra'])
+
 
 
         hist_data = [int(item == word) for item in sorted_words]
@@ -856,6 +858,7 @@ def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 
 
     if graph:
         mpl.style.use('seaborn')
+        #graph_data1 = []
         graph_data1 = []
         graph_data2 = []
         x = []
@@ -871,7 +874,8 @@ def analyze_result(tested_metrics, method_matrix, noOfminimuminstances, graph = 
         plt.xlabel('Počet nejbližších projevů [znak]')
         plt.ylabel('Zastoupení projevu se stejným významem [%]')
         for index,data in enumerate(graph_data1):
-            plt.text(x=index-0.18, y=data+1, s="{:.2f} %".format(data) , fontdict=dict(fontsize=11), fontweight='bold')
+            plt.text(x=index-0.18, y=data+1, s="{:.2f}".format(data) , fontdict=dict(fontsize=11), fontweight='bold', color='w')
+            plt.text(x=index+0.22, y=data+1, s="%" , fontdict=dict(fontsize=11), fontweight='bold', color='k')
         plt.legend(['','Rozdíl významu', 'Shoda významu'], bbox_to_anchor=(-0.1,1.02,0.6,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3)
         #plt.show()
 
@@ -949,15 +953,15 @@ if __name__ == '__main__':
         print((unique_count))
 
     # DTW of one word to all others
-    test_one_word = True
+    test_one_word = False
     if test_one_word: 
         word = 'zitra'
-        alg_type = 'method_combination'
+        alg_type = 'dtw'
         resample_method = 'fourier'
         int_method = 'linear'
         distance_method = 'hamming'
         order = 'toShorter'
-        compute_one_word(word, path_jointlist, 41, alg_type, order, resample_method, int_method, distance_method, graph=0)
+        compute_one_word(word, path_jointlist, 41, alg_type, order, resample_method, int_method, distance_method, graph=1)
     
     # Testing fcn of resample only
     test_resample = False
@@ -989,15 +993,15 @@ if __name__ == '__main__':
         print('{} counted over \'{}\' and \'{}\': {}'.format(kind, word1_meta[0], word2_meta[0], distance))
 
     # Analysis of one method output matrix from compute fcn
-    method_analyze = False
+    method_analyze = True
     if method_analyze:
         
-        tested_metrics1 = 'hamming'
-        tested_metrics2 = 'canberra'
+        tested_metrics1 = 'eucl'
+        tested_metrics2 = 'chebych'
 
-        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky3/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Euclidean,Mean/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/Lin,Minkowsky7/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20

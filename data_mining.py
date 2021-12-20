@@ -139,7 +139,7 @@ def prepare_trajectories(word1, word2, path_chosen_joints):
 def compute_dtw(data_prepared, alg_type):
     """Computes 2 types of DTW algorithm on given data from words_preparation fcn
     Args:
-        data_prepared (dictionary) = words_preparation fcn output
+        data_prepared (dictionary) = prepare_trajectories fcn output
 
     Returns:
         [double]: Mean of distances for separate joints counted between 2 instances of words
@@ -999,9 +999,9 @@ if __name__ == '__main__':
         tested_metrics1 = 'eucl'
         tested_metrics2 = 'chebych'
 
-        with open("Sign_Language_BP/output_files/final/F,Euclidean,Mean/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Hamming,Mean/out_matrix.pkl", 'rb') as pickle_file:
             output_1 = pk.load(pickle_file)
-        with open("Sign_Language_BP/output_files/final/F,Euclidean/out_matrix.pkl", 'rb') as pickle_file:
+        with open("Sign_Language_BP/output_files/final/F,Minkowsky3/out_matrix.pkl", 'rb') as pickle_file:
             output_2 = pk.load(pickle_file)
 
         minOf_instances = 20

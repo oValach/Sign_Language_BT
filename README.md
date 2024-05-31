@@ -1,6 +1,6 @@
 # Sign Language Motion Capture Data Analysis
 
-<img src='assets/README/gif_v2.gif' width=267> <img src='assets/README/gif_v1.gif' width=266> <img src='assets/README/gif_v3.gif' width=267>
+<img src='data/README/modelv1.png' width=400> <img src='data/README/modelv2.png' width=400>
 
 This repository includes the code used for RailSafeNet pipeline develoment. This pipeline was developed for the master's thesis **Automatic Detection of Objects in the Track from the Recording** by author [Ondřej Valach](https://github.com/oValach), supervised by [Ivan Gruber](https://github.com/YvanG). This thesis is accessible from [Theses](https://theses.cz/id/03nn2a/?lang=en).  
 

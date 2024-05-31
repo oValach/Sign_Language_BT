@@ -9,8 +9,6 @@ Folders `BVwHacker`, `lib` and `other` include additional scripts called by main
 
 Folder `data` includes some minor data used for evaluation, `shell&run` includes executing scripts for testing purposes and `output__files` is a directory where outputs are generated to.
 
-<img src="assets/README/system_pipeline.png" width="800"/>
-
 ## Execution
 For one metric setting evaluetion execute `data_mining.py` script, or just its `load()` and `compute()` functions. Check the input parameters of functions before the execution and set it up according to your needs.
 

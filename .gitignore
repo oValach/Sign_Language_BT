@@ -6,7 +6,11 @@ data_bvh/
 data_converted/
 data_trajectory/
 test.py
+graph.py
+graf2.py
+graph2.py
 prepis.py
+test_sc.py
 bvh_actual/
 source_data/
 source_words/

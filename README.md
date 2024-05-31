@@ -1,6 +1,6 @@
 # Sign Language Motion Capture Data Analysis
 
-<img src='data/README/modelv1.png' width=400> <img src='data/README/modelv2.png' width=360>
+<img src='data/README/modelv1.png' width=400> <img src='data/README/modelv2.png' width=365>
 
 This repository includes the code used for Sign Language Motion Capture Data Analysis bachelor's thesis development by author [Ondřej Valach](https://github.com/oValach). This thesis is accessible from [Theses](https://theses.cz/id/trmq9h/).
 
